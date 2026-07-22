@@ -20,7 +20,7 @@ export function useSupabaseList<T = any>(
   const refresh = useCallback(async () => {
     setLoading(true);
     setError(null);
-    let q: any = supabase.from(table).select(select).limit(limit);
+    let q: any = (supabase.from as any)(table).select(select).limit(limit);
     if (order) q = q.order(order.column, { ascending: order.ascending ?? true });
     if (filter) q = filter(q);
     const { data: rows, error: err } = await q;
@@ -42,7 +42,7 @@ export function useSupabaseList<T = any>(
 }
 
 export async function insertRow(table: string, values: Record<string, any>) {
-  const { data, error } = await supabase.from(table).insert(values).select().single();
+  const { data, error } = await (supabase.from as any)(table).insert(values).select().single();
   if (error) {
     toast.error(`Error: ${error.message}`);
     throw error;
@@ -52,7 +52,7 @@ export async function insertRow(table: string, values: Record<string, any>) {
 }
 
 export async function updateRow(table: string, id: string, values: Record<string, any>) {
-  const { data, error } = await supabase.from(table).update(values).eq("id", id).select().single();
+  const { data, error } = await (supabase.from as any)(table).update(values).eq("id", id).select().single();
   if (error) {
     toast.error(`Error: ${error.message}`);
     throw error;
@@ -62,7 +62,7 @@ export async function updateRow(table: string, id: string, values: Record<string
 }
 
 export async function deleteRow(table: string, id: string) {
-  const { error } = await supabase.from(table).delete().eq("id", id);
+  const { error } = await (supabase.from as any)(table).delete().eq("id", id);
   if (error) {
     toast.error(`Error: ${error.message}`);
     throw error;
