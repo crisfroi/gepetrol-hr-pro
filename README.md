@@ -84,7 +84,7 @@ Convenciones: UUIDs, `created_at`/`updated_at` con trigger, **RLS activa desde l
 | Hito | Alcance |
 |------|---------|
 | **H0** ✅ | Fundaciones UI: paleta, layout, sidebar, dashboard con KPIs mock, placeholders para todos los módulos |
-| **H1** | Aplicar migración SQL · configurar Supabase Auth · roles base · verificación RLS con `supabase--linter` |
+| **H1** ✅ | Auth (email/password) · `profiles` + `user_roles` + `has_role()` · trigger `on_auth_user_created` · layout `_authenticated` con gate · páginas `/auth` y `/reset-password` |
 | **H2** | Core HR: CRUD empleados, departamentos, puestos, contratos, organigrama, documentos (Storage) |
 | **H3** | Asistencia y turnos: check-in web/móvil, horarios, cobertura |
 | **H4** | Vacaciones: solicitudes, saldos, aprobaciones + **motor de asignación** (server function TS con simulated annealing; interfaz preparada para microservicio OptaPlanner externo) |
@@ -118,4 +118,18 @@ Entregado en esta fase:
 - Rutas creadas para **todos** los módulos del menú (23 módulos) con `<ModulePlaceholder>`.
 - Migración SQL completa (7 archivos) **pendiente de aplicación manual**.
 
-Próximo paso: revisar las migraciones, aplicarlas y arrancar **H1 (Auth + roles + RLS verificada)**.
+Próximo paso: elevar el primer usuario a `admin` desde la tabla `user_roles` (SQL Editor) y arrancar **H2 (Core HR: empleados, departamentos, puestos, contratos, organigrama)**.
+
+### Elevar un usuario a admin
+
+Tras el primer registro, ejecuta en el SQL Editor de Supabase:
+
+```sql
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, 'admin'::public.app_role FROM auth.users WHERE email = 'tu@correo.com'
+ON CONFLICT DO NOTHING;
+```
+
+### Deshabilitar confirmación de correo (desarrollo)
+
+Para pruebas rápidas: **Supabase Dashboard → Authentication → Providers → Email** y desactiva "Confirm email".

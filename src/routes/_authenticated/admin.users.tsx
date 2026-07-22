@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { UsersRound } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/admin/users")({
+export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({
     meta: [
       { title: "Usuarios y Roles · GEPETROL RRHH" },

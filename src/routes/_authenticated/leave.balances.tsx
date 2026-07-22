@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Scale } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/leave/balances")({
+export const Route = createFileRoute("/_authenticated/leave/balances")({
   head: () => ({
     meta: [
       { title: "Saldos de vacaciones · GEPETROL RRHH" },

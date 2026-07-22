@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Building2 } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/departments")({
+export const Route = createFileRoute("/_authenticated/departments")({
   head: () => ({
     meta: [
       { title: "Departamentos y Puestos · GEPETROL RRHH" },

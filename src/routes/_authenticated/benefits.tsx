@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Gift } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/benefits")({
+export const Route = createFileRoute("/_authenticated/benefits")({
   head: () => ({
     meta: [
       { title: "Beneficios y Compensaciones · GEPETROL RRHH" },

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/approvals/pending")({
+export const Route = createFileRoute("/_authenticated/approvals/pending")({
   head: () => ({
     meta: [
       { title: "Aprobaciones pendientes · GEPETROL RRHH" },

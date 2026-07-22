@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarRange } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/leave/scheduler")({
+export const Route = createFileRoute("/_authenticated/leave/scheduler")({
   head: () => ({
     meta: [
       { title: "Motor de asignación de vacaciones · GEPETROL RRHH" },

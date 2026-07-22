@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Target } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/performance")({
+export const Route = createFileRoute("/_authenticated/performance")({
   head: () => ({
     meta: [
       { title: "Evaluación de Desempeño · GEPETROL RRHH" },
