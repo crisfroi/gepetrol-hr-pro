@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/attendance")({
+export const Route = createFileRoute("/_authenticated/attendance")({
   head: () => ({
     meta: [
       { title: "Asistencia · GEPETROL RRHH" },

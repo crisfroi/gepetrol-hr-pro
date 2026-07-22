@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ShieldCheck } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/approvals/workflows")({
+export const Route = createFileRoute("/_authenticated/approvals/workflows")({
   head: () => ({
     meta: [
       { title: "Workflows de aprobación · GEPETROL RRHH" },

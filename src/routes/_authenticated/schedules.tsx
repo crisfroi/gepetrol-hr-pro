@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { CalendarClock } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/schedules")({
+export const Route = createFileRoute("/_authenticated/schedules")({
   head: () => ({
     meta: [
       { title: "Turnos y Horarios · GEPETROL RRHH" },

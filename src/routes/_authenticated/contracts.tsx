@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/contracts")({
+export const Route = createFileRoute("/_authenticated/contracts")({
   head: () => ({
     meta: [
       { title: "Contratos laborales · GEPETROL RRHH" },

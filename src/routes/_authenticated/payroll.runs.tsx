@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Wallet } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/payroll/runs")({
+export const Route = createFileRoute("/_authenticated/payroll/runs")({
   head: () => ({
     meta: [
       { title: "Corridas de nómina · GEPETROL RRHH" },

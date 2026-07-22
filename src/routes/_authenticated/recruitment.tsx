@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/recruitment")({
+export const Route = createFileRoute("/_authenticated/recruitment")({
   head: () => ({
     meta: [
       { title: "Reclutamiento y selección · GEPETROL RRHH" },

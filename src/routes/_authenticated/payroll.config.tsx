@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Settings2 } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/payroll/config")({
+export const Route = createFileRoute("/_authenticated/payroll/config")({
   head: () => ({
     meta: [
       { title: "Configuración de nómina · GEPETROL RRHH" },

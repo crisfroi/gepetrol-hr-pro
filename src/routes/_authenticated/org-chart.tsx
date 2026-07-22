@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Network } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/org-chart")({
+export const Route = createFileRoute("/_authenticated/org-chart")({
   head: () => ({
     meta: [
       { title: "Organigrama · GEPETROL RRHH" },

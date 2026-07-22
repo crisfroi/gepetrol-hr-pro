@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { UserCircle2 } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/self-service")({
+export const Route = createFileRoute("/_authenticated/self-service")({
   head: () => ({
     meta: [
       { title: "Portal del Empleado · GEPETROL RRHH" },

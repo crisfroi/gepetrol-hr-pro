@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Palmtree } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/leave/requests")({
+export const Route = createFileRoute("/_authenticated/leave/requests")({
   head: () => ({
     meta: [
       { title: "Solicitudes de permiso · GEPETROL RRHH" },

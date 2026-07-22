@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { GraduationCap } from "lucide-react";
 import { ModulePlaceholder } from "@/components/app/ModulePlaceholder";
 
-export const Route = createFileRoute("/training")({
+export const Route = createFileRoute("/_authenticated/training")({
   head: () => ({
     meta: [
       { title: "Capacitación y Desarrollo · GEPETROL RRHH" },
