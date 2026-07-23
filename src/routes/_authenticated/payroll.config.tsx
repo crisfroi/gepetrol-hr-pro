@@ -45,7 +45,7 @@ function Page() {
             {concepts.loading ? <LoadingState /> : concepts.data.length === 0 ? <EmptyState title="Sin conceptos" description="Percepciones, deducciones y bonificaciones." /> :
               <Table><TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Nombre</TableHead><TableHead>Tipo</TableHead><TableHead>Fórmula</TableHead><TableHead>Activo</TableHead></TableRow></TableHeader>
                 <TableBody>{concepts.data.map((c) => (
-                  <TableRow key={c.id}><TableCell className="font-mono text-xs">{c.code}</TableCell><TableCell>{c.name}</TableCell><TableCell><Badge variant="outline">{c.concept_type}</Badge></TableCell><TableCell className="font-mono text-xs max-w-xs truncate">{c.formula ?? "—"}</TableCell><TableCell>{c.active ? <Badge variant="secondary">Sí</Badge> : "—"}</TableCell></TableRow>
+                  <TableRow key={c.id}><TableCell className="font-mono text-xs">{c.code}</TableCell><TableCell>{c.name}</TableCell><TableCell><Badge variant="outline">{c.kind}</Badge></TableCell><TableCell className="font-mono text-xs max-w-xs truncate">{c.formula ?? "—"}</TableCell><TableCell>{c.active ? <Badge variant="secondary">Sí</Badge> : "—"}</TableCell></TableRow>
                 ))}</TableBody></Table>
             }
           </CardContent></Card>
