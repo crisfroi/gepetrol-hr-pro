@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
 import { formatCurrency } from "@/lib/format";
@@ -20,10 +21,10 @@ export const Route = createFileRoute("/_authenticated/payroll/runs")({
       { name: "description", content: "Ejecución mensual de nómina: borradores, revisión, aprobación y pago." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","hr","finance"]}><Page /></RoleGuard>,
 });
 
-type Run = { id: string; period_start: string; period_end: string; status: string; currency: string; gross_total: number | null; net_total: number | null; notes: string | null };
+type Run = { id: string; period_start: string; period_end: string; status: string; currency: string; total_gross: number | null; total_net: number | null; notes: string | null };
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   draft: "outline", review: "outline", approved: "secondary", paid: "secondary", cancelled: "destructive",
@@ -55,8 +56,8 @@ function Page() {
                 <TableRow key={r.id}>
                   <TableCell>{new Date(r.period_start).toLocaleDateString()} → {new Date(r.period_end).toLocaleDateString()}</TableCell>
                   <TableCell><Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>{r.status}</Badge></TableCell>
-                  <TableCell className="font-mono">{r.gross_total != null ? formatCurrency(r.gross_total, r.currency) : "—"}</TableCell>
-                  <TableCell className="font-mono">{r.net_total != null ? formatCurrency(r.net_total, r.currency) : "—"}</TableCell>
+                  <TableCell className="font-mono">{r.total_gross != null ? formatCurrency(r.total_gross, r.currency) : "—"}</TableCell>
+                  <TableCell className="font-mono">{r.total_net != null ? formatCurrency(r.total_net, r.currency) : "—"}</TableCell>
                   <TableCell>
                     {r.status === "draft" && <Button size="sm" variant="secondary" onClick={() => advance(r.id, "review")}>Enviar a revisión</Button>}
                     {r.status === "review" && <Button size="sm" variant="secondary" onClick={() => advance(r.id, "approved")}>Aprobar</Button>}

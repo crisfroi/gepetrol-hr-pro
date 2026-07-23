@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList } from "@/lib/data-hooks";
 
@@ -14,12 +15,12 @@ export const Route = createFileRoute("/_authenticated/payroll/config")({
       { name: "description", content: "Parámetros, conceptos y métodos de cálculo configurables." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","hr","finance"]}><Page /></RoleGuard>,
 });
 
 function Page() {
   const params = useSupabaseList<any>("payroll_parameters", { order: { column: "key" } });
-  const concepts = useSupabaseList<any>("payroll_concepts", { order: { column: "sort_order" } });
+  const concepts = useSupabaseList<any>("payroll_concepts", { order: { column: "display_order" } });
   const methods = useSupabaseList<any>("payroll_calculation_methods", { order: { column: "name" } });
   return (
     <>
@@ -45,7 +46,7 @@ function Page() {
             {concepts.loading ? <LoadingState /> : concepts.data.length === 0 ? <EmptyState title="Sin conceptos" description="Percepciones, deducciones y bonificaciones." /> :
               <Table><TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Nombre</TableHead><TableHead>Tipo</TableHead><TableHead>Fórmula</TableHead><TableHead>Activo</TableHead></TableRow></TableHeader>
                 <TableBody>{concepts.data.map((c) => (
-                  <TableRow key={c.id}><TableCell className="font-mono text-xs">{c.code}</TableCell><TableCell>{c.name}</TableCell><TableCell><Badge variant="outline">{c.concept_type}</Badge></TableCell><TableCell className="font-mono text-xs max-w-xs truncate">{c.formula ?? "—"}</TableCell><TableCell>{c.active ? <Badge variant="secondary">Sí</Badge> : "—"}</TableCell></TableRow>
+                  <TableRow key={c.id}><TableCell className="font-mono text-xs">{c.code}</TableCell><TableCell>{c.name}</TableCell><TableCell><Badge variant="outline">{c.kind}</Badge></TableCell><TableCell className="font-mono text-xs max-w-xs truncate">{c.formula ?? "—"}</TableCell><TableCell>{c.active ? <Badge variant="secondary">Sí</Badge> : "—"}</TableCell></TableRow>
                 ))}</TableBody></Table>
             }
           </CardContent></Card>

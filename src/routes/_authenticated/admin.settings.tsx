@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSupabaseList } from "@/lib/data-hooks";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/admin/settings")({
       { name: "description", content: "Parámetros de negocio configurables: impuestos, monedas, umbrales." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin"]}><Page /></RoleGuard>,
 });
 
 function Page() {

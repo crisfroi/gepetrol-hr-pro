@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, updateRow } from "@/lib/data-hooks";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/approvals/pending")({
       { name: "description", content: "Pagos pendientes de aprobación en la cadena de autorización." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","finance","supervisor"]}><Page /></RoleGuard>,
 });
 
 function Page() {
@@ -35,7 +36,7 @@ function Page() {
               <TableBody>{rows.data.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs">{r.step_id}</TableCell>
-                  <TableCell className="font-mono text-xs">{r.payslip_id ?? r.payroll_run_id ?? "—"}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.payroll_run_id ?? "—"}</TableCell>
                   <TableCell><Badge variant="outline">{r.decision}</Badge></TableCell>
                   <TableCell className="flex gap-1">
                     <Button size="sm" variant="secondary" onClick={() => decide(r.id, "approved")}>Aprobar</Button>

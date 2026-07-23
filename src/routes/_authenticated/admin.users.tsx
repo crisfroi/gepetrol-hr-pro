@@ -3,13 +3,11 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/PageHeader";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSupabaseList, insertRow, deleteRow } from "@/lib/data-hooks";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({
@@ -18,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
       { name: "description", content: "Gestión de accesos, roles y permisos granulares." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin"]}><Page /></RoleGuard>,
 });
 
 const ROLES = ["admin", "hr", "finance", "supervisor", "employee"];

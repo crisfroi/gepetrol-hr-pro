@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, updateRow } from "@/lib/data-hooks";
 import { formatCurrency } from "@/lib/format";
@@ -16,13 +17,13 @@ export const Route = createFileRoute("/_authenticated/approvals/alerts")({
       { name: "description", content: "Detección de desviaciones significativas en pagos de nómina." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","finance","supervisor"]}><Page /></RoleGuard>,
 });
 
 function Page() {
   const rows = useSupabaseList<any>("payment_alerts", { order: { column: "created_at", ascending: false } });
   const resolve = async (id: string) => {
-    await updateRow("payment_alerts", id, { status: "resolved", resolved_at: new Date().toISOString() });
+    await updateRow("payment_alerts", id, { status: "resolved", reviewed_at: new Date().toISOString() });
     rows.refresh();
   };
   return (

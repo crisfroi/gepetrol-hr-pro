@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/app/PageHeader";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSupabaseList } from "@/lib/data-hooks";
 
 export const Route = createFileRoute("/_authenticated/audit")({
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/audit")({
       { name: "description", content: "Bitácora inmutable de cambios en entidades críticas." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin"]}><Page /></RoleGuard>,
 });
 
 function Page() {

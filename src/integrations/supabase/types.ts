@@ -1360,6 +1360,8 @@ export type Database = {
         Args: { _employee_id: string; _leave_type_id: string; _year: number }
         Returns: number
       }
+      current_employee_department_id: { Args: never; Returns: string }
+      current_employee_id: { Args: never; Returns: string }
       detect_payment_anomaly: {
         Args: { _payslip_id: string; _threshold_pct?: number }
         Returns: undefined
