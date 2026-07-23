@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/payroll/config")({
 
 function Page() {
   const params = useSupabaseList<any>("payroll_parameters", { order: { column: "key" } });
-  const concepts = useSupabaseList<any>("payroll_concepts", { order: { column: "sort_order" } });
+  const concepts = useSupabaseList<any>("payroll_concepts", { order: { column: "display_order" } });
   const methods = useSupabaseList<any>("payroll_calculation_methods", { order: { column: "name" } });
   return (
     <>
