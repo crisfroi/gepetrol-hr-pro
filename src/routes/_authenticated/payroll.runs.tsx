@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
 import { formatCurrency } from "@/lib/format";
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/payroll/runs")({
       { name: "description", content: "Ejecución mensual de nómina: borradores, revisión, aprobación y pago." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","hr","finance"]}><Page /></RoleGuard>,
 });
 
 type Run = { id: string; period_start: string; period_end: string; status: string; currency: string; total_gross: number | null; total_net: number | null; notes: string | null };

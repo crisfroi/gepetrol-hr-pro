@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList } from "@/lib/data-hooks";
 import { formatCurrency } from "@/lib/format";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/payroll/payslips")({
       { name: "description", content: "Recibos individuales, desglose de conceptos y consulta histórica." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","hr","finance"]}><Page /></RoleGuard>,
 });
 
 type P = { id: string; employee_id: string; run_id: string; gross: number; net: number; currency: string; deductions: number };

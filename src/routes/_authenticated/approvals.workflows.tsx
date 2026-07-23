@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList } from "@/lib/data-hooks";
 
@@ -13,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/approvals/workflows")({
       { name: "description", content: "Niveles configurables de autorización por tipo de pago." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","finance","supervisor"]}><Page /></RoleGuard>,
 });
 
 function Page() {

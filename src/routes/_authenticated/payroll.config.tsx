@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList } from "@/lib/data-hooks";
 
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/payroll/config")({
       { name: "description", content: "Parámetros, conceptos y métodos de cálculo configurables." },
     ],
   }),
-  component: Page,
+  component: () => <RoleGuard allow={["admin","hr","finance"]}><Page /></RoleGuard>,
 });
 
 function Page() {
