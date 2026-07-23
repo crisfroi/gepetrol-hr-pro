@@ -35,7 +35,7 @@ function Page() {
               <TableBody>{rows.data.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell className="font-mono text-xs">{r.step_id}</TableCell>
-                  <TableCell className="font-mono text-xs">{r.payslip_id ?? r.payroll_run_id ?? "—"}</TableCell>
+                  <TableCell className="font-mono text-xs">{r.payroll_run_id ?? "—"}</TableCell>
                   <TableCell><Badge variant="outline">{r.decision}</Badge></TableCell>
                   <TableCell className="flex gap-1">
                     <Button size="sm" variant="secondary" onClick={() => decide(r.id, "approved")}>Aprobar</Button>
