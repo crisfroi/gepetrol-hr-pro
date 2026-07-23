@@ -1,65 +1,44 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/app/PageHeader";
 import { RoleGuard } from "@/components/app/RoleGuard";
-import { LoadingState, EmptyState } from "@/components/app/DataStates";
-import { useSupabaseList } from "@/lib/data-hooks";
+import {
+  PayrollConceptsPanel,
+  PayrollMethodsPanel,
+  PayrollParametersPanel,
+} from "@/components/app/ConfigManagement";
 
 export const Route = createFileRoute("/_authenticated/payroll/config")({
   head: () => ({
     meta: [
-      { title: "Configuración de nómina · GEPETROL RRHH" },
-      { name: "description", content: "Parámetros, conceptos y métodos de cálculo configurables." },
+      { title: "Configuracion de nomina - GEPETROL RRHH" },
+      { name: "description", content: "Parametros, conceptos y metodos de calculo configurables." },
     ],
   }),
-  component: () => <RoleGuard allow={["admin","hr","finance"]}><Page /></RoleGuard>,
+  component: () => <RoleGuard allow={["admin", "hr", "finance"]}><Page /></RoleGuard>,
 });
 
 function Page() {
-  const params = useSupabaseList<any>("payroll_parameters", { order: { column: "key" } });
-  const concepts = useSupabaseList<any>("payroll_concepts", { order: { column: "display_order" } });
-  const methods = useSupabaseList<any>("payroll_calculation_methods", { order: { column: "name" } });
   return (
     <>
-      <PageHeader title="Configuración de nómina" description="Todos los parámetros del cálculo — nada hardcodeado." />
+      <PageHeader
+        title="Configuracion de nomina"
+        description="Parametros, conceptos y metodos editables desde base de datos; el frontend no codifica reglas de negocio."
+      />
       <Tabs defaultValue="params">
         <TabsList>
-          <TabsTrigger value="params">Parámetros</TabsTrigger>
+          <TabsTrigger value="params">Parametros</TabsTrigger>
           <TabsTrigger value="concepts">Conceptos</TabsTrigger>
-          <TabsTrigger value="methods">Métodos</TabsTrigger>
+          <TabsTrigger value="methods">Metodos</TabsTrigger>
         </TabsList>
         <TabsContent value="params">
-          <Card><CardContent className="p-4">
-            {params.loading ? <LoadingState /> : params.data.length === 0 ? <EmptyState title="Sin parámetros" description="Impuestos, cotizaciones, monedas, periodicidad." /> :
-              <Table><TableHeader><TableRow><TableHead>Clave</TableHead><TableHead>Valor</TableHead><TableHead>Tipo</TableHead><TableHead>Descripción</TableHead></TableRow></TableHeader>
-                <TableBody>{params.data.map((p) => (
-                  <TableRow key={p.id}><TableCell className="font-mono text-xs">{p.key}</TableCell><TableCell className="font-mono">{JSON.stringify(p.value)}</TableCell><TableCell><Badge variant="outline">{p.value_type}</Badge></TableCell><TableCell className="text-muted-foreground">{p.description ?? "—"}</TableCell></TableRow>
-                ))}</TableBody></Table>
-            }
-          </CardContent></Card>
+          <PayrollParametersPanel />
         </TabsContent>
         <TabsContent value="concepts">
-          <Card><CardContent className="p-4">
-            {concepts.loading ? <LoadingState /> : concepts.data.length === 0 ? <EmptyState title="Sin conceptos" description="Percepciones, deducciones y bonificaciones." /> :
-              <Table><TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Nombre</TableHead><TableHead>Tipo</TableHead><TableHead>Fórmula</TableHead><TableHead>Activo</TableHead></TableRow></TableHeader>
-                <TableBody>{concepts.data.map((c) => (
-                  <TableRow key={c.id}><TableCell className="font-mono text-xs">{c.code}</TableCell><TableCell>{c.name}</TableCell><TableCell><Badge variant="outline">{c.kind}</Badge></TableCell><TableCell className="font-mono text-xs max-w-xs truncate">{c.formula ?? "—"}</TableCell><TableCell>{c.active ? <Badge variant="secondary">Sí</Badge> : "—"}</TableCell></TableRow>
-                ))}</TableBody></Table>
-            }
-          </CardContent></Card>
+          <PayrollConceptsPanel />
         </TabsContent>
         <TabsContent value="methods">
-          <Card><CardContent className="p-4">
-            {methods.loading ? <LoadingState /> : methods.data.length === 0 ? <EmptyState title="Sin métodos" description="Fijo, por horas, mixto, comisión, destajo." /> :
-              <Table><TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Nombre</TableHead><TableHead>Descripción</TableHead></TableRow></TableHeader>
-                <TableBody>{methods.data.map((m) => (
-                  <TableRow key={m.id}><TableCell className="font-mono text-xs">{m.code}</TableCell><TableCell>{m.name}</TableCell><TableCell className="text-muted-foreground">{m.description ?? "—"}</TableCell></TableRow>
-                ))}</TableBody></Table>
-            }
-          </CardContent></Card>
+          <PayrollMethodsPanel />
         </TabsContent>
       </Tabs>
     </>

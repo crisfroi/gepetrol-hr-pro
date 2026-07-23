@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/")({
 function Dashboard() {
   const emps = useSupabaseList<any>("employees", { select: "id, status" });
   const leaves = useSupabaseList<any>("leave_requests", { select: "id, status" });
-  const runs = useSupabaseList<any>("payroll_runs", { select: "id, status, gross_total, currency" });
+  const runs = useSupabaseList<any>("payroll_runs", { select: "id, status, total_gross, currency" });
   const alerts = useSupabaseList<any>("payment_alerts", { select: "id, status" });
 
   if (emps.loading || leaves.loading || runs.loading || alerts.loading) return <LoadingState />;

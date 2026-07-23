@@ -19,9 +19,9 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-primary">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Página no encontrada</h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Pagina no encontrada</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          La página que buscas no existe o ha sido movida.
+          La pagina que buscas no existe o ha sido movida.
         </p>
         <div className="mt-6">
           <Link
@@ -47,10 +47,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Esta página no se pudo cargar
+          Esta pagina no se pudo cargar
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Algo salió mal. Puedes reintentar o volver al inicio.
+          Algo salio mal. Puedes reintentar o volver al inicio.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -79,25 +79,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "GEPETROL — ERP de Recursos Humanos" },
+      { title: "GEPETROL - ERP de Recursos Humanos" },
       {
         name: "description",
         content:
-          "Sistema integral de gestión de RRHH de GEPETROL: personal, nómina, vacaciones, aprobaciones y auditoría.",
+          "Sistema integral de gestion de RRHH de GEPETROL: personal, nomina, vacaciones, aprobaciones y auditoria.",
       },
       { name: "author", content: "GEPETROL" },
-      { property: "og:title", content: "GEPETROL — ERP de Recursos Humanos" },
+      { property: "og:title", content: "GEPETROL - ERP de Recursos Humanos" },
       {
         property: "og:description",
         content:
-          "Plataforma corporativa de gestión de personal, nómina y aprobaciones para GEPETROL.",
+          "Plataforma corporativa de gestion de personal, nomina y aprobaciones para GEPETROL.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/LOGO%20GEP.webp", type: "image/webp" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "" },
       {

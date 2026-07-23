@@ -1,42 +1,42 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/app/PageHeader";
-import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { RoleGuard } from "@/components/app/RoleGuard";
-import { useSupabaseList } from "@/lib/data-hooks";
+import { DevDataPanel } from "@/components/app/DevDataPanel";
+import { PayrollParametersPanel } from "@/components/app/ConfigManagement";
 
 export const Route = createFileRoute("/_authenticated/admin/settings")({
   head: () => ({
     meta: [
-      { title: "Parámetros del sistema · GEPETROL RRHH" },
-      { name: "description", content: "Parámetros de negocio configurables: impuestos, monedas, umbrales." },
+      { title: "Parametros del sistema - GEPETROL RRHH" },
+      { name: "description", content: "Parametros de negocio configurables, auditoria documental y datos de desarrollo." },
     ],
   }),
   component: () => <RoleGuard allow={["admin"]}><Page /></RoleGuard>,
 });
 
 function Page() {
-  const params = useSupabaseList<any>("payroll_parameters", { order: { column: "key" } });
+  const [reloadKey, setReloadKey] = useState(0);
+
   return (
     <>
-      <PageHeader title="Parámetros del sistema" description="Todos los parámetros de negocio en tablas de configuración — el frontend los lee, nunca los codifica." />
-      <Card>
-        <CardContent className="p-4">
-          {params.loading ? <LoadingState /> : params.data.length === 0 ? <EmptyState title="Sin parámetros" description="Aún no se han cargado parámetros de negocio." /> :
-            <Table><TableHeader><TableRow><TableHead>Clave</TableHead><TableHead>Valor</TableHead><TableHead>Tipo</TableHead><TableHead>Descripción</TableHead></TableRow></TableHeader>
-              <TableBody>{params.data.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-mono text-xs">{p.key}</TableCell>
-                  <TableCell className="font-mono">{JSON.stringify(p.value)}</TableCell>
-                  <TableCell><Badge variant="outline">{p.value_type}</Badge></TableCell>
-                  <TableCell className="text-muted-foreground">{p.description ?? "—"}</TableCell>
-                </TableRow>
-              ))}</TableBody></Table>
-          }
-        </CardContent>
-      </Card>
+      <PageHeader
+        title="Parametros del sistema"
+        description="Configuracion operativa, generacion de datos de prueba y controles de desarrollo conectados a Supabase."
+      />
+      <Tabs defaultValue="business">
+        <TabsList>
+          <TabsTrigger value="business">Negocio</TabsTrigger>
+          <TabsTrigger value="development">Desarrollo</TabsTrigger>
+        </TabsList>
+        <TabsContent value="business">
+          <PayrollParametersPanel reloadKey={reloadKey} />
+        </TabsContent>
+        <TabsContent value="development">
+          <DevDataPanel onChanged={() => setReloadKey((value) => value + 1)} />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }
