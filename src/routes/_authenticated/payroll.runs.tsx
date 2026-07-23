@@ -55,8 +55,8 @@ function Page() {
                 <TableRow key={r.id}>
                   <TableCell>{new Date(r.period_start).toLocaleDateString()} → {new Date(r.period_end).toLocaleDateString()}</TableCell>
                   <TableCell><Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>{r.status}</Badge></TableCell>
-                  <TableCell className="font-mono">{r.gross_total != null ? formatCurrency(r.gross_total, r.currency) : "—"}</TableCell>
-                  <TableCell className="font-mono">{r.net_total != null ? formatCurrency(r.net_total, r.currency) : "—"}</TableCell>
+                  <TableCell className="font-mono">{r.total_gross != null ? formatCurrency(r.total_gross, r.currency) : "—"}</TableCell>
+                  <TableCell className="font-mono">{r.total_net != null ? formatCurrency(r.total_net, r.currency) : "—"}</TableCell>
                   <TableCell>
                     {r.status === "draft" && <Button size="sm" variant="secondary" onClick={() => advance(r.id, "review")}>Enviar a revisión</Button>}
                     {r.status === "review" && <Button size="sm" variant="secondary" onClick={() => advance(r.id, "approved")}>Aprobar</Button>}
