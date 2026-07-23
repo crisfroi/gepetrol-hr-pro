@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { AppRole } from "@/hooks/use-auth";
 import {
   LayoutDashboard,
   Users,
@@ -31,6 +32,8 @@ export type NavItem = {
   to: string;
   icon: LucideIcon;
   status?: "ready" | "wip" | "planned";
+  /** If set, only users with at least one of these roles see this item. Empty/undefined = everyone. */
+  roles?: AppRole[];
 };
 
 export type NavSection = {
@@ -38,6 +41,12 @@ export type NavSection = {
   items: NavItem[];
 };
 
+// Role model:
+//   admin        → todo
+//   hr           → personal, tiempo, permisos (gestión), talento, nómina lectura
+//   finance      → nómina (gestión), aprobaciones, alertas
+//   supervisor   → equipo, asistencia, aprobación de permisos, aprobaciones
+//   employee     → dashboard, portal, sus propios recibos/permisos
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: "General",
@@ -46,17 +55,17 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Gestión de Personal",
     items: [
-      { label: "Empleados", to: "/employees", icon: Users, status: "ready" },
+      { label: "Empleados", to: "/employees", icon: Users, status: "ready", roles: ["admin", "hr", "supervisor", "finance"] },
       { label: "Organigrama", to: "/org-chart", icon: Network, status: "ready" },
-      { label: "Departamentos y Puestos", to: "/departments", icon: Building2, status: "ready" },
-      { label: "Contratos", to: "/contracts", icon: FileText, status: "ready" },
+      { label: "Departamentos y Puestos", to: "/departments", icon: Building2, status: "ready", roles: ["admin", "hr"] },
+      { label: "Contratos", to: "/contracts", icon: FileText, status: "ready", roles: ["admin", "hr", "finance"] },
     ],
   },
   {
     title: "Tiempo y Asistencia",
     items: [
       { label: "Asistencia", to: "/attendance", icon: Clock, status: "ready" },
-      { label: "Turnos y Horarios", to: "/schedules", icon: CalendarClock, status: "ready" },
+      { label: "Turnos y Horarios", to: "/schedules", icon: CalendarClock, status: "ready", roles: ["admin", "hr", "supervisor"] },
     ],
   },
   {
@@ -64,32 +73,32 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Solicitudes", to: "/leave/requests", icon: Palmtree, status: "ready" },
       { label: "Saldos", to: "/leave/balances", icon: Scale, status: "ready" },
-      { label: "Motor de asignación", to: "/leave/scheduler", icon: CalendarRange, status: "ready" },
+      { label: "Motor de asignación", to: "/leave/scheduler", icon: CalendarRange, status: "ready", roles: ["admin", "hr"] },
     ],
   },
   {
     title: "Nómina",
     items: [
-      { label: "Corridas", to: "/payroll/runs", icon: Wallet, status: "ready" },
-      { label: "Recibos", to: "/payroll/payslips", icon: Receipt, status: "ready" },
-      { label: "Configuración", to: "/payroll/config", icon: Settings2, status: "ready" },
+      { label: "Corridas", to: "/payroll/runs", icon: Wallet, status: "ready", roles: ["admin", "hr", "finance"] },
+      { label: "Recibos", to: "/payroll/payslips", icon: Receipt, status: "ready", roles: ["admin", "hr", "finance"] },
+      { label: "Configuración", to: "/payroll/config", icon: Settings2, status: "ready", roles: ["admin", "hr", "finance"] },
     ],
   },
   {
     title: "Aprobaciones y Alertas",
     items: [
-      { label: "Workflow de pagos", to: "/approvals/workflows", icon: ShieldCheck, status: "ready" },
-      { label: "Pendientes de aprobación", to: "/approvals/pending", icon: ClipboardList, status: "ready" },
-      { label: "Alertas de sobrepago", to: "/approvals/alerts", icon: AlertTriangle, status: "ready" },
+      { label: "Workflow de pagos", to: "/approvals/workflows", icon: ShieldCheck, status: "ready", roles: ["admin", "finance"] },
+      { label: "Pendientes de aprobación", to: "/approvals/pending", icon: ClipboardList, status: "ready", roles: ["admin", "finance", "supervisor"] },
+      { label: "Alertas de sobrepago", to: "/approvals/alerts", icon: AlertTriangle, status: "ready", roles: ["admin", "finance"] },
     ],
   },
   {
     title: "Talento",
     items: [
-      { label: "Reclutamiento", to: "/recruitment", icon: Briefcase, status: "ready" },
-      { label: "Evaluación de Desempeño", to: "/performance", icon: Target, status: "ready" },
-      { label: "Capacitación", to: "/training", icon: GraduationCap, status: "ready" },
-      { label: "Beneficios", to: "/benefits", icon: Gift, status: "ready" },
+      { label: "Reclutamiento", to: "/recruitment", icon: Briefcase, status: "ready", roles: ["admin", "hr"] },
+      { label: "Evaluación de Desempeño", to: "/performance", icon: Target, status: "ready", roles: ["admin", "hr", "supervisor"] },
+      { label: "Capacitación", to: "/training", icon: GraduationCap, status: "ready", roles: ["admin", "hr"] },
+      { label: "Beneficios", to: "/benefits", icon: Gift, status: "ready", roles: ["admin", "hr"] },
     ],
   },
   {
@@ -101,9 +110,14 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Administración",
     items: [
-      { label: "Auditoría", to: "/audit", icon: History, status: "ready" },
-      { label: "Usuarios y Roles", to: "/admin/users", icon: UsersRound, status: "ready" },
-      { label: "Parámetros del sistema", to: "/admin/settings", icon: SlidersHorizontal, status: "ready" },
+      { label: "Auditoría", to: "/audit", icon: History, status: "ready", roles: ["admin"] },
+      { label: "Usuarios y Roles", to: "/admin/users", icon: UsersRound, status: "ready", roles: ["admin"] },
+      { label: "Parámetros del sistema", to: "/admin/settings", icon: SlidersHorizontal, status: "ready", roles: ["admin"] },
     ],
   },
 ];
+
+export function canSeeNavItem(item: NavItem, roles: AppRole[]): boolean {
+  if (!item.roles || item.roles.length === 0) return true;
+  return item.roles.some((r) => roles.includes(r));
+}
