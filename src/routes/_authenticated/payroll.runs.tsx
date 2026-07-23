@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/payroll/runs")({
   component: Page,
 });
 
-type Run = { id: string; period_start: string; period_end: string; status: string; currency: string; gross_total: number | null; net_total: number | null; notes: string | null };
+type Run = { id: string; period_start: string; period_end: string; status: string; currency: string; total_gross: number | null; total_net: number | null; notes: string | null };
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   draft: "outline", review: "outline", approved: "secondary", paid: "secondary", cancelled: "destructive",
