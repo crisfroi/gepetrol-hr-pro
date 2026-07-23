@@ -22,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/approvals/alerts")({
 function Page() {
   const rows = useSupabaseList<any>("payment_alerts", { order: { column: "created_at", ascending: false } });
   const resolve = async (id: string) => {
-    await updateRow("payment_alerts", id, { status: "resolved", resolved_at: new Date().toISOString() });
+    await updateRow("payment_alerts", id, { status: "resolved", reviewed_at: new Date().toISOString() });
     rows.refresh();
   };
   return (
