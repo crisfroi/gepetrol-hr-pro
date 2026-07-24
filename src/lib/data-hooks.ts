@@ -7,12 +7,14 @@ export function useSupabaseList<T = any>(
   opts: {
     select?: string;
     order?: { column: string; ascending?: boolean };
+    orderBy?: { column: string; ascending?: boolean };
     filter?: (q: any) => any;
     deps?: any[];
     limit?: number;
   } = {},
 ) {
-  const { select = "*", order, filter, deps = [], limit = 500 } = opts;
+  const { select = "*", order: orderOpt, orderBy, filter, deps = [], limit = 500 } = opts;
+  const order = orderOpt ?? orderBy;
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export function useSupabaseList<T = any>(
     refresh();
   }, [refresh]);
 
-  return { data, loading, error, refresh, setData };
+  return { data, loading, error, refresh, refetch: refresh, setData };
 }
 
 export async function insertRow(table: string, values: Record<string, any>) {
