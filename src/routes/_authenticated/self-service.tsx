@@ -1,506 +1,317 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import {
-  Download,
-  Edit2,
-  Save,
-  X,
-  AlertCircle,
-  FileText,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Calendar, FileDown, Plus, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useSupabaseList, updateRow } from "@/lib/data-hooks";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { PageHeader } from "@/components/app/PageHeader";
+import { LoadingState, EmptyState } from "@/components/app/DataStates";
+import { useAuth } from "@/hooks/use-auth";
+import { formatCurrency } from "@/lib/format";
+import { generatePayslipPDF } from "@/lib/pdf";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/self-service")({
   head: () => ({
     meta: [
-      { title: "Portal del Empleado · GEPETROL RRHH" },
-      {
-        name: "description",
-        content:
-          "Autoservicio para consultar recibos, solicitar permisos y actualizar datos.",
-      },
+      { title: "Portal del empleado · GEPETROL RRHH" },
+      { name: "description", content: "Autoservicio del empleado: solicitudes, recibos y calendario personal." },
     ],
   }),
   component: Page,
 });
 
-interface PayslipRecord {
-  id: string;
-  employee_id: string;
-  period_start: string;
-  period_end: string;
-  gross_amount: number;
-  deductions_amount: number;
-  net_amount: number;
-  status: string;
-  created_at: string;
-}
-
-interface EmployeeData {
-  id: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  phone: string;
-  personal_email: string;
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
-  address: string;
-  city: string;
-  country: string;
-}
+type LeaveType = { id: string; name: string; requires_approval: boolean };
+type LeaveReq = { id: string; employee_id: string; leave_type_id: string; start_date: string; end_date: string; days_requested: number | null; status: string; reason: string | null };
+type Payslip = { id: string; run_id: string; gross: number; net: number; deductions: number; currency: string; created_at: string; audit_hash: string | null; employee_id: string };
 
 function Page() {
-  const [activeTab, setActiveTab] = useState<"profile" | "payslips" | "requests">(
-    "profile"
-  );
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [employeeData, setEmployeeData] = useState<EmployeeData | null>(null);
-  const [editedData, setEditedData] = useState<Partial<EmployeeData>>({});
+  const { user } = useAuth();
+  const [employee, setEmployee] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [payslips, setPayslips] = useState<Payslip[]>([]);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveReq[]>([]);
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [teamRequests, setTeamRequests] = useState<LeaveReq[]>([]);
+  const [openReq, setOpenReq] = useState(false);
 
-  // Fetch payslips
-  const { data: payslips, refetch: refetchPayslips } = useSupabaseList<
-    PayslipRecord
-  >("payslips", {
-    select: "*",
-    orderBy: "period_end",
-    descending: true,
-  });
-
-  // Get current user and load employee data
   useEffect(() => {
-    const fetchUserData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setCurrentUser(user);
+    (async () => {
+      if (!user?.id) return;
+      setLoading(true);
+      const { data: emp } = await supabase.from("employees").select("*").eq("user_id", user.id).maybeSingle();
+      setEmployee(emp);
+      const [types, myReqs, mySlips, team] = await Promise.all([
+        supabase.from("leave_types").select("id, name, requires_approval"),
+        emp ? supabase.from("leave_requests").select("*").eq("employee_id", emp.id).order("start_date", { ascending: false }) : Promise.resolve({ data: [] } as any),
+        emp ? supabase.from("payslips").select("*").eq("employee_id", emp.id).order("created_at", { ascending: false }) : Promise.resolve({ data: [] } as any),
+        emp?.department_id
+          ? supabase.from("leave_requests").select("*, employees!inner(department_id)").eq("employees.department_id", emp.department_id).in("status", ["approved", "submitted"]).gte("end_date", new Date().toISOString().slice(0, 10))
+          : Promise.resolve({ data: [] } as any),
+      ]);
+      setLeaveTypes((types.data ?? []) as any);
+      setLeaveRequests((myReqs.data ?? []) as any);
+      setPayslips((mySlips.data ?? []) as any);
+      setTeamRequests((team.data ?? []) as any);
+      setLoading(false);
+    })();
+  }, [user?.id]);
 
-      if (user) {
-        // Fetch employee data for current user
-        const { data: employee } = await supabase
-          .from("employees")
-          .select("*")
-          .eq("user_id", user.id)
-          .single();
-
-        if (employee) {
-          setEmployeeData(employee);
-          setEditedData(employee);
-        }
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  const handleSaveProfile = async () => {
-    try {
-      if (employeeData) {
-        await updateRow("employees", employeeData.id, editedData);
-        setEmployeeData({ ...employeeData, ...editedData });
-        setIsEditing(false);
-      }
-    } catch (error) {
-      console.error("Error saving profile:", error);
+  const refresh = () => {
+    if (user?.id) {
+      setLoading(true);
+      supabase.from("leave_requests").select("*").eq("employee_id", employee?.id).order("start_date", { ascending: false })
+        .then(({ data }) => { setLeaveRequests((data ?? []) as any); setLoading(false); });
     }
   };
 
-  const handleDownloadPayslip = (payslip: PayslipRecord) => {
-    // In a real implementation, this would generate a PDF
-    // For now, just show a message
-    alert(`Descargando recibo de ${payslip.period_start} a ${payslip.period_end}`);
+  const downloadPDF = async (p: Payslip) => {
+    try {
+      const [{ data: items }, { data: run }] = await Promise.all([
+        supabase.from("payslip_line_items").select("*, payroll_concepts(code, name, kind)").eq("payslip_id", p.id),
+        supabase.from("payroll_runs").select("period_start, period_end, pay_date").eq("id", p.run_id).maybeSingle(),
+      ]);
+      generatePayslipPDF({ payslip: p, employee, run: run as any, items: (items ?? []) as any, auditHash: p.audit_hash });
+    } catch (e: any) {
+      toast.error(`Error generando PDF: ${e.message}`);
+    }
+  };
+
+  if (loading) return <><PageHeader title="Portal del empleado" /><LoadingState /></>;
+
+  if (!employee) {
+    return (
+      <>
+        <PageHeader title="Portal del empleado" />
+        <EmptyState title="Sin ficha de empleado" description="Tu usuario no está vinculado a una ficha de empleado. Contacta con RRHH." />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <PageHeader
+        title={`Hola, ${employee.first_name}`}
+        description={`Portal personal · ${employee.employee_code}`}
+        actions={
+          <Dialog open={openReq} onOpenChange={setOpenReq}>
+            <Button onClick={() => setOpenReq(true)}><Plus className="h-4 w-4" /> Nueva solicitud</Button>
+            <LeaveRequestForm
+              employee={employee}
+              leaveTypes={leaveTypes}
+              teamRequests={teamRequests}
+              onDone={() => { setOpenReq(false); refresh(); }}
+            />
+          </Dialog>
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-3 mb-4">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm flex items-center gap-2"><UserIcon className="h-4 w-4" /> Mi ficha</CardTitle></CardHeader>
+          <CardContent className="text-sm space-y-1">
+            <p><span className="text-muted-foreground">Email:</span> {employee.email ?? "—"}</p>
+            <p><span className="text-muted-foreground">Teléfono:</span> {employee.phone ?? "—"}</p>
+            <p><span className="text-muted-foreground">Ingreso:</span> {new Date(employee.hire_date).toLocaleDateString()}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Solicitudes activas</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold">{leaveRequests.filter((r) => r.status === "submitted" || r.status === "approved").length}</p></CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-sm">Recibos disponibles</CardTitle></CardHeader>
+          <CardContent><p className="text-2xl font-bold">{payslips.length}</p></CardContent>
+        </Card>
+      </div>
+
+      <Tabs defaultValue="requests">
+        <TabsList>
+          <TabsTrigger value="requests">Mis solicitudes</TabsTrigger>
+          <TabsTrigger value="calendar">Calendario del equipo</TabsTrigger>
+          <TabsTrigger value="payslips">Mis recibos</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="requests">
+          <Card><CardContent className="p-4">
+            {leaveRequests.length === 0 ? <EmptyState title="Sin solicitudes" description="Crea tu primera solicitud de permiso o vacaciones." /> : (
+              <Table>
+                <TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Inicio</TableHead><TableHead>Fin</TableHead><TableHead>Días</TableHead><TableHead>Estado</TableHead></TableRow></TableHeader>
+                <TableBody>{leaveRequests.map((r) => {
+                  const t = leaveTypes.find((x) => x.id === r.leave_type_id);
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell>{t?.name ?? "—"}</TableCell>
+                      <TableCell>{new Date(r.start_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{new Date(r.end_date).toLocaleDateString()}</TableCell>
+                      <TableCell>{r.days_requested ?? "—"}</TableCell>
+                      <TableCell><Badge variant={r.status === "approved" ? "secondary" : r.status === "rejected" ? "destructive" : "outline"}>{r.status}</Badge></TableCell>
+                    </TableRow>
+                  );
+                })}</TableBody>
+              </Table>
+            )}
+          </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <Card><CardContent className="p-4">
+            <TeamCalendar teamRequests={teamRequests} myRequests={leaveRequests} />
+          </CardContent></Card>
+        </TabsContent>
+
+        <TabsContent value="payslips">
+          <Card><CardContent className="p-4">
+            {payslips.length === 0 ? <EmptyState title="Sin recibos" description="Aún no se han generado recibos para ti." /> : (
+              <Table>
+                <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Bruto</TableHead><TableHead>Deducciones</TableHead><TableHead>Neto</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
+                <TableBody>{payslips.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>{new Date(p.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-mono">{formatCurrency(p.gross, p.currency)}</TableCell>
+                    <TableCell className="font-mono text-destructive">{formatCurrency(p.deductions, p.currency)}</TableCell>
+                    <TableCell className="font-mono font-semibold">{formatCurrency(p.net, p.currency)}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" onClick={() => downloadPDF(p)}><FileDown className="h-4 w-4" /> PDF</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}</TableBody>
+              </Table>
+            )}
+          </CardContent></Card>
+        </TabsContent>
+      </Tabs>
+    </>
+  );
+}
+
+function LeaveRequestForm({ employee, leaveTypes, teamRequests, onDone }: { employee: any; leaveTypes: LeaveType[]; teamRequests: LeaveReq[]; onDone: () => void }) {
+  const [typeId, setTypeId] = useState("");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [reason, setReason] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const days = useMemo(() => {
+    if (!start || !end) return 0;
+    return Math.max(0, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000) + 1);
+  }, [start, end]);
+
+  const conflicts = useMemo(() => {
+    if (!start || !end) return [];
+    const s = new Date(start).getTime(); const e = new Date(end).getTime();
+    return teamRequests.filter((r) => {
+      const rs = new Date(r.start_date).getTime(); const re = new Date(r.end_date).getTime();
+      return rs <= e && re >= s;
+    });
+  }, [start, end, teamRequests]);
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("leave_requests").insert({
+        employee_id: employee.id,
+        leave_type_id: typeId,
+        start_date: start,
+        end_date: end,
+        days_requested: days,
+        reason: reason || null,
+        status: "submitted",
+      });
+      if (error) throw error;
+      toast.success("Solicitud enviada");
+      onDone();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally { setSaving(false); }
   };
 
   return (
-    <div className="self-service-container space-y-6 p-6">
-      <div className="portal-header">
-        <h1 className="text-3xl font-bold">Portal del Empleado</h1>
-        <p className="text-gray-600">
-          Accede a tus datos, recibos de nómina y solicitudes
-        </p>
+    <DialogContent className="max-w-lg">
+      <DialogHeader><DialogTitle>Nueva solicitud de permiso</DialogTitle></DialogHeader>
+      <div className="space-y-3">
+        <div><Label>Tipo</Label>
+          <Select value={typeId} onValueChange={setTypeId}>
+            <SelectTrigger><SelectValue placeholder="Seleccionar tipo" /></SelectTrigger>
+            <SelectContent>{leaveTypes.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Inicio</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+          <div><Label>Fin</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+        </div>
+        {days > 0 && <p className="text-sm text-muted-foreground">Días solicitados: <strong>{days}</strong></p>}
+        {conflicts.length > 0 && (
+          <div className="rounded border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">
+            ⚠️ Solapamiento con {conflicts.length} compañero{conflicts.length > 1 ? "s" : ""} del equipo en esas fechas.
+          </div>
+        )}
+        <div><Label>Motivo (opcional)</Label><Textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} /></div>
       </div>
+      <DialogFooter>
+        <Button disabled={saving || !typeId || !start || !end} onClick={submit}>{saving ? "Enviando..." : "Enviar"}</Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
 
-      <div className="portal-tabs flex gap-4 border-b">
-        <button
-          onClick={() => setActiveTab("profile")}
-          className={`tab-button px-4 py-2 font-medium transition-colors ${
-            activeTab === "profile"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Mi Perfil
-        </button>
-        <button
-          onClick={() => setActiveTab("payslips")}
-          className={`tab-button px-4 py-2 font-medium transition-colors ${
-            activeTab === "payslips"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Recibos de Nómina
-        </button>
-        <button
-          onClick={() => setActiveTab("requests")}
-          className={`tab-button px-4 py-2 font-medium transition-colors ${
-            activeTab === "requests"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Mis Solicitudes
-        </button>
+function TeamCalendar({ teamRequests, myRequests }: { teamRequests: LeaveReq[]; myRequests: LeaveReq[] }) {
+  const today = new Date();
+  const [monthOffset, setMonthOffset] = useState(0);
+  const base = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+  const daysInMonth = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
+  const firstDow = base.getDay();
+
+  const dayStatus = (day: number): "free" | "mine" | "team" | "both" => {
+    const d = new Date(base.getFullYear(), base.getMonth(), day);
+    const t = d.getTime();
+    const mine = myRequests.some((r) => new Date(r.start_date).getTime() <= t && new Date(r.end_date).getTime() >= t);
+    const team = teamRequests.some((r) => new Date(r.start_date).getTime() <= t && new Date(r.end_date).getTime() >= t);
+    if (mine && team) return "both";
+    if (mine) return "mine";
+    if (team) return "team";
+    return "free";
+  };
+
+  const cellClass = (s: string) =>
+    s === "free" ? "bg-green-50 border-green-200 text-green-900"
+    : s === "mine" ? "bg-blue-100 border-blue-300 text-blue-900 font-semibold"
+    : s === "team" ? "bg-amber-100 border-amber-300 text-amber-900"
+    : "bg-red-100 border-red-300 text-red-900 font-semibold";
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold flex items-center gap-2"><Calendar className="h-4 w-4" /> {base.toLocaleDateString("es-ES", { month: "long", year: "numeric" })}</h3>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setMonthOffset(monthOffset - 1)}>‹ Mes anterior</Button>
+          <Button size="sm" variant="outline" onClick={() => setMonthOffset(0)}>Hoy</Button>
+          <Button size="sm" variant="outline" onClick={() => setMonthOffset(monthOffset + 1)}>Mes siguiente ›</Button>
+        </div>
       </div>
-
-      {activeTab === "profile" && (
-        <div className="profile-section space-y-6">
-          <div className="profile-card bg-white border rounded-lg p-6">
-            <div className="profile-header flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-semibold">Información Personal</h2>
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="edit-btn flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                >
-                  <Edit2 size={18} />
-                  Editar Datos
-                </button>
-              )}
-            </div>
-
-            {employeeData ? (
-              <div className="profile-content space-y-4">
-                <div className="profile-section-header grid grid-cols-2 gap-6 mb-6 pb-6 border-b">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Nombre
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedData.first_name || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            first_name: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">
-                        {employeeData.first_name}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Apellido
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedData.last_name || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            last_name: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">
-                        {employeeData.last_name}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="contact-section grid grid-cols-2 gap-6 mb-6 pb-6 border-b">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Email Laboral
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        value={editedData.email || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            email: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">{employeeData.email}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Email Personal
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        value={editedData.personal_email || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            personal_email: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">
-                        {employeeData.personal_email || "No registrado"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="phone-section grid grid-cols-2 gap-6 mb-6 pb-6 border-b">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Teléfono
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={editedData.phone || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            phone: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">
-                        {employeeData.phone || "No registrado"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Dirección
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedData.address || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            address: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">
-                        {employeeData.address || "No registrada"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="emergency-section grid grid-cols-2 gap-6 mb-6 pb-6 border-b">
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Contacto de Emergencia
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedData.emergency_contact_name || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            emergency_contact_name: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">
-                        {employeeData.emergency_contact_name || "No registrado"}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">
-                      Teléfono Emergencia
-                    </label>
-                    {isEditing ? (
-                      <input
-                        type="tel"
-                        value={editedData.emergency_contact_phone || ""}
-                        onChange={(e) =>
-                          setEditedData({
-                            ...editedData,
-                            emergency_contact_phone: e.target.value,
-                          })
-                        }
-                        className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-lg font-medium">
-                        {employeeData.emergency_contact_phone ||
-                          "No registrado"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {isEditing && (
-                  <div className="edit-actions flex gap-2 pt-4 border-t">
-                    <button
-                      onClick={() => {
-                        setIsEditing(false);
-                        setEditedData(employeeData);
-                      }}
-                      className="btn-secondary flex-1 flex items-center justify-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
-                    >
-                      <X size={18} />
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleSaveProfile}
-                      className="btn-primary flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                    >
-                      <Save size={18} />
-                      Guardar Cambios
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="empty-state text-center py-8 text-gray-500">
-                <AlertCircle className="mx-auto mb-2" size={32} />
-                <p>No se encontró información de empleado</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "payslips" && (
-        <div className="payslips-section space-y-4">
-          <div className="payslips-header mb-6">
-            <h2 className="text-2xl font-semibold">Mis Recibos de Nómina</h2>
-            <p className="text-gray-600 text-sm mt-1">
-              Descarga tus recibos de pago en PDF
-            </p>
-          </div>
-
-          <div className="payslips-list space-y-3">
-            {payslips && payslips.length === 0 ? (
-              <div className="empty-state text-center py-8 text-gray-500">
-                <FileText className="mx-auto mb-2" size={32} />
-                <p>No hay recibos de nómina disponibles</p>
-              </div>
-            ) : (
-              payslips?.map((payslip) => (
-                <div
-                  key={payslip.id}
-                  className="payslip-card bg-white border rounded-lg p-4 hover:shadow-md transition"
-                >
-                  <div className="payslip-header flex justify-between items-start mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">
-                        Período:{" "}
-                        {new Date(payslip.period_start).toLocaleDateString()} -{" "}
-                        {new Date(payslip.period_end).toLocaleDateString()}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Procesado:{" "}
-                        {new Date(payslip.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => handleDownloadPayslip(payslip)}
-                      className="download-btn flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
-                    >
-                      <Download size={18} />
-                      Descargar
-                    </button>
-                  </div>
-
-                  <div className="payslip-details grid grid-cols-3 gap-4 py-4 border-t border-b text-sm">
-                    <div>
-                      <span className="text-gray-600">Sueldo Bruto:</span>
-                      <p className="font-bold text-lg">
-                        ${payslip.gross_amount.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Descuentos:</span>
-                      <p className="font-bold text-lg text-red-600">
-                        -${payslip.deductions_amount.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Sueldo Neto:</span>
-                      <p className="font-bold text-lg text-green-600">
-                        ${payslip.net_amount.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="payslip-status mt-3">
-                    <span className="text-sm text-gray-600">Estado:</span>
-                    <span
-                      className={`inline-block ml-2 px-3 py-1 rounded-full text-sm font-medium ${
-                        payslip.status === "paid"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {payslip.status === "paid" ? "Pagado" : "Procesado"}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "requests" && (
-        <div className="requests-section space-y-4">
-          <div className="requests-header mb-6">
-            <h2 className="text-2xl font-semibold">Mis Solicitudes</h2>
-            <p className="text-gray-600 text-sm mt-1">
-              Visualiza el estado de tus solicitudes de vacaciones, permisos y
-              otros
-            </p>
-          </div>
-
-          <div className="requests-info bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-800">
-              📋 Las solicitudes se pueden tramitar desde el módulo de "Gestión
-              de Solicitudes" en el menú principal.
-            </p>
-          </div>
-
-          <div className="empty-state text-center py-8 text-gray-500">
-            <AlertCircle className="mx-auto mb-2" size={32} />
-            <p>No hay solicitudes registradas</p>
-          </div>
-        </div>
-      )}
+      <div className="flex gap-3 text-xs">
+        <span className="flex items-center gap-1"><span className="h-3 w-3 rounded border bg-green-100 border-green-300" /> Disponible</span>
+        <span className="flex items-center gap-1"><span className="h-3 w-3 rounded border bg-blue-100 border-blue-300" /> Yo</span>
+        <span className="flex items-center gap-1"><span className="h-3 w-3 rounded border bg-amber-100 border-amber-300" /> Equipo</span>
+        <span className="flex items-center gap-1"><span className="h-3 w-3 rounded border bg-red-100 border-red-300" /> Conflicto</span>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-xs">
+        {["D","L","M","X","J","V","S"].map((d) => <div key={d} className="font-semibold text-muted-foreground py-1">{d}</div>)}
+        {Array.from({ length: firstDow }).map((_, i) => <div key={"empty-"+i} />)}
+        {Array.from({ length: daysInMonth }).map((_, i) => {
+          const day = i + 1;
+          const s = dayStatus(day);
+          return <div key={day} className={`aspect-square rounded border p-1 flex items-center justify-center ${cellClass(s)}`}>{day}</div>;
+        })}
+      </div>
     </div>
   );
 }
