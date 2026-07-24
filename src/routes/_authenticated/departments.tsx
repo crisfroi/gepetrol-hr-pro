@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Building2, Plus } from "lucide-react";
+import { Building2, Plus, Edit, Eye, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/PageHeader";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
-import { useSupabaseList, insertRow } from "@/lib/data-hooks";
+import { useSupabaseList, insertRow, updateRow, deleteRow } from "@/lib/data-hooks";
 
 export const Route = createFileRoute("/_authenticated/departments")({
   head: () => ({
@@ -31,6 +31,20 @@ function Page() {
   const positions = useSupabaseList<Pos>("positions", { order: { column: "title" } });
   const [openDept, setOpenDept] = useState(false);
   const [openPos, setOpenPos] = useState(false);
+  const [editingDept, setEditingDept] = useState<Dept | null>(null);
+  const [editingPos, setEditingPos] = useState<Pos | null>(null);
+
+  const handleDeleteDept = async (id: string) => {
+    if (!confirm("¿Eliminar este departamento?")) return;
+    await deleteRow("departments", id);
+    depts.refresh();
+  };
+
+  const handleDeletePos = async (id: string) => {
+    if (!confirm("¿Eliminar este puesto?")) return;
+    await deleteRow("positions", id);
+    positions.refresh();
+  };
 
   return (
     <>
@@ -52,9 +66,18 @@ function Page() {
               <EmptyState title="Sin departamentos" description="Crea el primer departamento para empezar." />
             ) : (
               <Table>
-                <TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Nombre</TableHead><TableHead>C. Coste</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Nombre</TableHead><TableHead>C. Coste</TableHead><TableHead></TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
                 <TableBody>{depts.data.map((d) => (
-                  <TableRow key={d.id}><TableCell className="font-mono text-xs">{d.code}</TableCell><TableCell>{d.name}</TableCell><TableCell className="text-muted-foreground">{d.cost_center ?? "—"}</TableCell><TableCell>{d.active ? <Badge variant="secondary">Activo</Badge> : <Badge variant="outline">Inactivo</Badge>}</TableCell></TableRow>
+                  <TableRow key={d.id}>
+                    <TableCell className="font-mono text-xs">{d.code}</TableCell>
+                    <TableCell>{d.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{d.cost_center ?? "—"}</TableCell>
+                    <TableCell>{d.active ? <Badge variant="secondary">Activo</Badge> : <Badge variant="outline">Inactivo</Badge>}</TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button size="sm" variant="ghost" onClick={() => setEditingDept(d)}><Edit className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" className="text-red-600" onClick={() => handleDeleteDept(d.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
                 ))}</TableBody>
               </Table>
             )}
@@ -74,25 +97,45 @@ function Page() {
               <EmptyState title="Sin puestos" description="Añade puestos al catálogo." />
             ) : (
               <Table>
-                <TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Título</TableHead><TableHead>Grado</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Código</TableHead><TableHead>Título</TableHead><TableHead>Grado</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
                 <TableBody>{positions.data.map((p) => (
-                  <TableRow key={p.id}><TableCell className="font-mono text-xs">{p.code}</TableCell><TableCell>{p.title}</TableCell><TableCell className="text-muted-foreground">{p.grade ?? "—"}</TableCell></TableRow>
+                  <TableRow key={p.id}>
+                    <TableCell className="font-mono text-xs">{p.code}</TableCell>
+                    <TableCell>{p.title}</TableCell>
+                    <TableCell className="text-muted-foreground">{p.grade ?? "—"}</TableCell>
+                    <TableCell className="text-right space-x-1">
+                      <Button size="sm" variant="ghost" onClick={() => setEditingPos(p)}><Edit className="h-4 w-4" /></Button>
+                      <Button size="sm" variant="ghost" className="text-red-600" onClick={() => handleDeletePos(p.id)}><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
                 ))}</TableBody>
               </Table>
             )}
           </CardContent>
         </Card>
       </div>
+
+      {editingDept && (
+        <Dialog open={!!editingDept} onOpenChange={() => setEditingDept(null)}>
+          <DeptForm dept={editingDept} depts={depts.data} onDone={() => { setEditingDept(null); depts.refresh(); }} />
+        </Dialog>
+      )}
+
+      {editingPos && (
+        <Dialog open={!!editingPos} onOpenChange={() => setEditingPos(null)}>
+          <PosForm pos={editingPos} depts={depts.data} onDone={() => { setEditingPos(null); positions.refresh(); }} />
+        </Dialog>
+      )}
     </>
   );
 }
 
-function DeptForm({ depts, onDone }: { depts: Dept[]; onDone: () => void }) {
-  const [f, setF] = useState({ code: "", name: "", cost_center: "", parent_id: "" });
+function DeptForm({ dept, depts, onDone }: { dept?: Dept; depts: Dept[]; onDone: () => void }) {
+  const [f, setF] = useState(dept || { id: "", code: "", name: "", cost_center: "", parent_id: "", active: true });
   const [saving, setSaving] = useState(false);
   return (
     <DialogContent>
-      <DialogHeader><DialogTitle>Nuevo departamento</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle>{dept ? "Editar departamento" : "Nuevo departamento"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div><Label>Código</Label><Input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} placeholder="UP-01" /></div>
         <div><Label>Nombre</Label><Input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Upstream Bata" /></div>
@@ -107,20 +150,27 @@ function DeptForm({ depts, onDone }: { depts: Dept[]; onDone: () => void }) {
       <DialogFooter>
         <Button disabled={saving || !f.code || !f.name} onClick={async () => {
           setSaving(true);
-          try { await insertRow("departments", { code: f.code, name: f.name, cost_center: f.cost_center || null, parent_id: f.parent_id || null }); onDone(); }
+          try {
+            if (dept) {
+              await updateRow("departments", dept.id, { code: f.code, name: f.name, cost_center: f.cost_center || null, parent_id: f.parent_id || null, active: f.active });
+            } else {
+              await insertRow("departments", { code: f.code, name: f.name, cost_center: f.cost_center || null, parent_id: f.parent_id || null });
+            }
+            onDone();
+          }
           finally { setSaving(false); }
-        }}>Guardar</Button>
+        }}>{dept ? "Actualizar" : "Guardar"}</Button>
       </DialogFooter>
     </DialogContent>
   );
 }
 
-function PosForm({ depts, onDone }: { depts: Dept[]; onDone: () => void }) {
-  const [f, setF] = useState({ code: "", title: "", grade: "", department_id: "" });
+function PosForm({ pos, depts, onDone }: { pos?: Pos; depts: Dept[]; onDone: () => void }) {
+  const [f, setF] = useState(pos || { id: "", code: "", title: "", grade: "", department_id: "", active: true });
   const [saving, setSaving] = useState(false);
   return (
     <DialogContent>
-      <DialogHeader><DialogTitle>Nuevo puesto</DialogTitle></DialogHeader>
+      <DialogHeader><DialogTitle>{pos ? "Editar puesto" : "Nuevo puesto"}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div><Label>Código</Label><Input value={f.code} onChange={(e) => setF({ ...f, code: e.target.value })} /></div>
         <div><Label>Título</Label><Input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} /></div>
@@ -135,9 +185,16 @@ function PosForm({ depts, onDone }: { depts: Dept[]; onDone: () => void }) {
       <DialogFooter>
         <Button disabled={saving || !f.code || !f.title} onClick={async () => {
           setSaving(true);
-          try { await insertRow("positions", { code: f.code, title: f.title, grade: f.grade || null, department_id: f.department_id || null }); onDone(); }
+          try {
+            if (pos) {
+              await updateRow("positions", pos.id, { code: f.code, title: f.title, grade: f.grade || null, department_id: f.department_id || null, active: f.active });
+            } else {
+              await insertRow("positions", { code: f.code, title: f.title, grade: f.grade || null, department_id: f.department_id || null });
+            }
+            onDone();
+          }
           finally { setSaving(false); }
-        }}>Guardar</Button>
+        }}>{pos ? "Actualizar" : "Guardar"}</Button>
       </DialogFooter>
     </DialogContent>
   );

@@ -81,6 +81,10 @@ CREATE POLICY "development seed: admin read records" ON public.development_seed_
 FOR SELECT TO authenticated
 USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
+GRANT SELECT, INSERT ON public.document_audit_keys TO authenticated;
+GRANT SELECT ON public.development_seed_batches TO authenticated;
+GRANT SELECT ON public.development_seed_records TO authenticated;
+
 CREATE OR REPLACE FUNCTION public.set_payroll_run_audit_hash()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -88,7 +92,7 @@ SET search_path = public
 AS $$
 BEGIN
   IF NEW.audit_hash IS NULL THEN
-    NEW.audit_hash := encode(digest('payroll_runs:' || NEW.id::text || ':' || COALESCE(NEW.created_at::text, now()::text), 'sha256'), 'hex');
+    NEW.audit_hash := encode(extensions.digest(('payroll_runs:' || NEW.id::text || ':' || COALESCE(NEW.created_at::text, now()::text))::bytea, 'sha256'::name), 'hex');
   END IF;
   RETURN NEW;
 END;
@@ -101,7 +105,7 @@ SET search_path = public
 AS $$
 BEGIN
   IF NEW.audit_hash IS NULL THEN
-    NEW.audit_hash := encode(digest('payslips:' || NEW.id::text || ':' || COALESCE(NEW.created_at::text, now()::text), 'sha256'), 'hex');
+    NEW.audit_hash := encode(extensions.digest(('payslips:' || NEW.id::text || ':' || COALESCE(NEW.created_at::text, now()::text))::bytea, 'sha256'::name), 'hex');
   END IF;
   RETURN NEW;
 END;
@@ -118,11 +122,11 @@ BEFORE INSERT OR UPDATE ON public.payslips
 FOR EACH ROW EXECUTE FUNCTION public.set_payslip_audit_hash();
 
 UPDATE public.payroll_runs
-SET audit_hash = encode(digest('payroll_runs:' || id::text || ':' || created_at::text, 'sha256'), 'hex')
+SET audit_hash = encode(extensions.digest(('payroll_runs:' || id::text || ':' || created_at::text)::bytea, 'sha256'::name), 'hex')
 WHERE audit_hash IS NULL;
 
 UPDATE public.payslips
-SET audit_hash = encode(digest('payslips:' || id::text || ':' || created_at::text, 'sha256'), 'hex')
+SET audit_hash = encode(extensions.digest(('payslips:' || id::text || ':' || created_at::text)::bytea, 'sha256'::name), 'hex')
 WHERE audit_hash IS NULL;
 
 CREATE OR REPLACE FUNCTION public.track_development_seed_record(
@@ -168,14 +172,14 @@ BEGIN
     RAISE EXCEPTION 'Insufficient privileges';
   END IF;
 
-  v_hash := encode(digest(
-    COALESCE(_document_type, '') || ':' ||
+  v_hash := encode(extensions.digest(
+    (COALESCE(_document_type, '') || ':' ||
     COALESCE(_entity_table, '') || ':' ||
     COALESCE(_entity_id::text, '') || ':' ||
     COALESCE(_payload_hash, '') || ':' ||
     auth.uid()::text || ':' ||
-    clock_timestamp()::text,
-    'sha256'
+    clock_timestamp()::text)::bytea,
+    'sha256'::name
   ), 'hex');
 
   INSERT INTO public.document_audit_keys(document_type, entity_table, entity_id, payload_hash, audit_hash, payload, generated_by)
@@ -282,7 +286,7 @@ BEGIN
       'Empleado',
       'Prueba ' || i,
       'dev.' || lower(v_suffix) || '.' || i || '@example.test',
-      current_date - ((i * 17) || ' days')::interval,
+      (current_date - ((i * 17) || ' days')::interval)::date,
       v_department_id,
       v_position_id,
       'active',
@@ -292,7 +296,7 @@ BEGIN
     PERFORM public.track_development_seed_record(v_batch_id, 'employees', v_employee_id);
 
     INSERT INTO public.employment_contracts(employee_id, contract_type, start_date, base_salary, currency, weekly_hours, calculation_method_id, active)
-    VALUES (v_employee_id, 'permanent', current_date - ((i * 17) || ' days')::interval, v_salary, 'XAF', 40, v_method_id, true)
+    VALUES (v_employee_id, 'permanent', (current_date - ((i * 17) || ' days')::interval)::date, v_salary, 'XAF', 40, v_method_id, true)
     RETURNING id INTO v_contract_id;
     PERFORM public.track_development_seed_record(v_batch_id, 'employment_contracts', v_contract_id);
 
