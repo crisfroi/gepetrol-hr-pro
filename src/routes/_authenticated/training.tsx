@@ -8,7 +8,7 @@ import {
   X,
   AlertCircle,
 } from "lucide-react";
-import { RoleGuard } from "@/components/auth/RoleGuard";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { useSupabaseList, insertRow, updateRow, deleteRow } from "@/lib/data-hooks";
 
 export const Route = createFileRoute("/_authenticated/training")({

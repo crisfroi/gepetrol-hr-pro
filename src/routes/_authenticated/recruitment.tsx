@@ -9,7 +9,7 @@ import {
   X,
   AlertCircle,
 } from "lucide-react";
-import { RoleGuard } from "@/components/auth/RoleGuard";
+import { RoleGuard } from "@/components/app/RoleGuard";
 import { supabase } from "@/integrations/supabase/client";
 import { useSupabaseList, insertRow, updateRow, deleteRow } from "@/lib/data-hooks";
 
