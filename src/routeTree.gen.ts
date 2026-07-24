@@ -9,38 +9,37 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticated/training'
-import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
-import { Route as AuthenticatedSelfServiceRouteImport } from './routes/_authenticated/self-service'
-import { Route as AuthenticatedSchedulesRouteImport } from './routes/_authenticated/schedules'
-import { Route as AuthenticatedRecruitmentRouteImport } from './routes/_authenticated/recruitment'
-import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
-import { Route as AuthenticatedOrgChartRouteImport } from './routes/_authenticated/org-chart'
-import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
-import { Route as AuthenticatedDepartmentsRouteImport } from './routes/_authenticated/departments'
-import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
-import { Route as AuthenticatedBenefitsRouteImport } from './routes/_authenticated/benefits'
-import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated/attendance'
-import { Route as AuthenticatedPayrollRunsRouteImport } from './routes/_authenticated/payroll.runs'
-import { Route as AuthenticatedPayrollPayslipsRouteImport } from './routes/_authenticated/payroll.payslips'
-import { Route as AuthenticatedPayrollConfigRouteImport } from './routes/_authenticated/payroll.config'
-import { Route as AuthenticatedLeaveSchedulerRouteImport } from './routes/_authenticated/leave.scheduler'
-import { Route as AuthenticatedLeaveRequestsRouteImport } from './routes/_authenticated/leave.requests'
-import { Route as AuthenticatedLeaveBalancesRouteImport } from './routes/_authenticated/leave.balances'
-import { Route as AuthenticatedApprovalsWorkflowsRouteImport } from './routes/_authenticated/approvals.workflows'
-import { Route as AuthenticatedApprovalsPendingRouteImport } from './routes/_authenticated/approvals.pending'
-import { Route as AuthenticatedApprovalsAlertsRouteImport } from './routes/_authenticated/approvals.alerts'
-import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
+import { Route as AuthenticatedBenefitsRouteImport } from './routes/_authenticated/benefits'
+import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
+import { Route as AuthenticatedDepartmentsRouteImport } from './routes/_authenticated/departments'
+import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
+import { Route as AuthenticatedOrgChartRouteImport } from './routes/_authenticated/org-chart'
+import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
+import { Route as AuthenticatedRecruitmentRouteImport } from './routes/_authenticated/recruitment'
+import { Route as AuthenticatedSchedulesRouteImport } from './routes/_authenticated/schedules'
+import { Route as AuthenticatedSelfServiceRouteImport } from './routes/_authenticated/self-service'
+import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
+import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticated/training'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedApprovalsAlertsRouteImport } from './routes/_authenticated/approvals.alerts'
+import { Route as AuthenticatedApprovalsPendingRouteImport } from './routes/_authenticated/approvals.pending'
+import { Route as AuthenticatedApprovalsWorkflowsRouteImport } from './routes/_authenticated/approvals.workflows'
+import { Route as AuthenticatedLeaveBalancesRouteImport } from './routes/_authenticated/leave.balances'
+import { Route as AuthenticatedLeaveRequestsRouteImport } from './routes/_authenticated/leave.requests'
+import { Route as AuthenticatedLeaveSchedulerRouteImport } from './routes/_authenticated/leave.scheduler'
+import { Route as AuthenticatedPayrollConfigRouteImport } from './routes/_authenticated/payroll.config'
+import { Route as AuthenticatedPayrollPayslipsRouteImport } from './routes/_authenticated/payroll.payslips'
+import { Route as AuthenticatedPayrollRunsRouteImport } from './routes/_authenticated/payroll.runs'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -48,8 +47,9 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
@@ -57,47 +57,24 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedTrainingRoute = AuthenticatedTrainingRouteImport.update({
-  id: '/training',
-  path: '/training',
+const AuthenticatedAttendanceRoute = AuthenticatedAttendanceRouteImport.update({
+  id: '/attendance',
+  path: '/attendance',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedStatisticsRoute = AuthenticatedStatisticsRouteImport.update({
-  id: '/statistics',
-  path: '/statistics',
+const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSelfServiceRoute =
-  AuthenticatedSelfServiceRouteImport.update({
-    id: '/self-service',
-    path: '/self-service',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedSchedulesRoute = AuthenticatedSchedulesRouteImport.update({
-  id: '/schedules',
-  path: '/schedules',
+const AuthenticatedBenefitsRoute = AuthenticatedBenefitsRouteImport.update({
+  id: '/benefits',
+  path: '/benefits',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedRecruitmentRoute =
-  AuthenticatedRecruitmentRouteImport.update({
-    id: '/recruitment',
-    path: '/recruitment',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPerformanceRoute =
-  AuthenticatedPerformanceRouteImport.update({
-    id: '/performance',
-    path: '/performance',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedOrgChartRoute = AuthenticatedOrgChartRouteImport.update({
-  id: '/org-chart',
-  path: '/org-chart',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
-  id: '/employees',
-  path: '/employees',
+const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDepartmentsRoute =
@@ -106,66 +83,64 @@ const AuthenticatedDepartmentsRoute =
     path: '/departments',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
-  id: '/contracts',
-  path: '/contracts',
+const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
+  id: '/employees',
+  path: '/employees',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBenefitsRoute = AuthenticatedBenefitsRouteImport.update({
-  id: '/benefits',
-  path: '/benefits',
+const AuthenticatedOrgChartRoute = AuthenticatedOrgChartRouteImport.update({
+  id: '/org-chart',
+  path: '/org-chart',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
+const AuthenticatedPerformanceRoute =
+  AuthenticatedPerformanceRouteImport.update({
+    id: '/performance',
+    path: '/performance',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecruitmentRoute =
+  AuthenticatedRecruitmentRouteImport.update({
+    id: '/recruitment',
+    path: '/recruitment',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSchedulesRoute = AuthenticatedSchedulesRouteImport.update({
+  id: '/schedules',
+  path: '/schedules',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAttendanceRoute = AuthenticatedAttendanceRouteImport.update({
-  id: '/attendance',
-  path: '/attendance',
+const AuthenticatedSelfServiceRoute =
+  AuthenticatedSelfServiceRouteImport.update({
+    id: '/self-service',
+    path: '/self-service',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedStatisticsRoute = AuthenticatedStatisticsRouteImport.update({
+  id: '/statistics',
+  path: '/statistics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedPayrollRunsRoute =
-  AuthenticatedPayrollRunsRouteImport.update({
-    id: '/payroll/runs',
-    path: '/payroll/runs',
+const AuthenticatedTrainingRoute = AuthenticatedTrainingRouteImport.update({
+  id: '/training',
+  path: '/training',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/admin/settings',
+    path: '/admin/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedPayrollPayslipsRoute =
-  AuthenticatedPayrollPayslipsRouteImport.update({
-    id: '/payroll/payslips',
-    path: '/payroll/payslips',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedPayrollConfigRoute =
-  AuthenticatedPayrollConfigRouteImport.update({
-    id: '/payroll/config',
-    path: '/payroll/config',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLeaveSchedulerRoute =
-  AuthenticatedLeaveSchedulerRouteImport.update({
-    id: '/leave/scheduler',
-    path: '/leave/scheduler',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLeaveRequestsRoute =
-  AuthenticatedLeaveRequestsRouteImport.update({
-    id: '/leave/requests',
-    path: '/leave/requests',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedLeaveBalancesRoute =
-  AuthenticatedLeaveBalancesRouteImport.update({
-    id: '/leave/balances',
-    path: '/leave/balances',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedApprovalsWorkflowsRoute =
-  AuthenticatedApprovalsWorkflowsRouteImport.update({
-    id: '/approvals/workflows',
-    path: '/approvals/workflows',
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedApprovalsAlertsRoute =
+  AuthenticatedApprovalsAlertsRouteImport.update({
+    id: '/approvals/alerts',
+    path: '/approvals/alerts',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedApprovalsPendingRoute =
@@ -174,21 +149,46 @@ const AuthenticatedApprovalsPendingRoute =
     path: '/approvals/pending',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedApprovalsAlertsRoute =
-  AuthenticatedApprovalsAlertsRouteImport.update({
-    id: '/approvals/alerts',
-    path: '/approvals/alerts',
+const AuthenticatedApprovalsWorkflowsRoute =
+  AuthenticatedApprovalsWorkflowsRouteImport.update({
+    id: '/approvals/workflows',
+    path: '/approvals/workflows',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
-  id: '/admin/users',
-  path: '/admin/users',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedAdminSettingsRoute =
-  AuthenticatedAdminSettingsRouteImport.update({
-    id: '/admin/settings',
-    path: '/admin/settings',
+const AuthenticatedLeaveBalancesRoute =
+  AuthenticatedLeaveBalancesRouteImport.update({
+    id: '/leave/balances',
+    path: '/leave/balances',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLeaveRequestsRoute =
+  AuthenticatedLeaveRequestsRouteImport.update({
+    id: '/leave/requests',
+    path: '/leave/requests',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedLeaveSchedulerRoute =
+  AuthenticatedLeaveSchedulerRouteImport.update({
+    id: '/leave/scheduler',
+    path: '/leave/scheduler',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPayrollConfigRoute =
+  AuthenticatedPayrollConfigRouteImport.update({
+    id: '/payroll/config',
+    path: '/payroll/config',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPayrollPayslipsRoute =
+  AuthenticatedPayrollPayslipsRouteImport.update({
+    id: '/payroll/payslips',
+    path: '/payroll/payslips',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPayrollRunsRoute =
+  AuthenticatedPayrollRunsRouteImport.update({
+    id: '/payroll/runs',
+    path: '/payroll/runs',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
@@ -380,11 +380,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -394,11 +394,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/': {
@@ -408,81 +408,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/training': {
-      id: '/_authenticated/training'
-      path: '/training'
-      fullPath: '/training'
-      preLoaderRoute: typeof AuthenticatedTrainingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/statistics': {
-      id: '/_authenticated/statistics'
-      path: '/statistics'
-      fullPath: '/statistics'
-      preLoaderRoute: typeof AuthenticatedStatisticsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/self-service': {
-      id: '/_authenticated/self-service'
-      path: '/self-service'
-      fullPath: '/self-service'
-      preLoaderRoute: typeof AuthenticatedSelfServiceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/schedules': {
-      id: '/_authenticated/schedules'
-      path: '/schedules'
-      fullPath: '/schedules'
-      preLoaderRoute: typeof AuthenticatedSchedulesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/recruitment': {
-      id: '/_authenticated/recruitment'
-      path: '/recruitment'
-      fullPath: '/recruitment'
-      preLoaderRoute: typeof AuthenticatedRecruitmentRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/performance': {
-      id: '/_authenticated/performance'
-      path: '/performance'
-      fullPath: '/performance'
-      preLoaderRoute: typeof AuthenticatedPerformanceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/org-chart': {
-      id: '/_authenticated/org-chart'
-      path: '/org-chart'
-      fullPath: '/org-chart'
-      preLoaderRoute: typeof AuthenticatedOrgChartRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/employees': {
-      id: '/_authenticated/employees'
-      path: '/employees'
-      fullPath: '/employees'
-      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/departments': {
-      id: '/_authenticated/departments'
-      path: '/departments'
-      fullPath: '/departments'
-      preLoaderRoute: typeof AuthenticatedDepartmentsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/contracts': {
-      id: '/_authenticated/contracts'
-      path: '/contracts'
-      fullPath: '/contracts'
-      preLoaderRoute: typeof AuthenticatedContractsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/benefits': {
-      id: '/_authenticated/benefits'
-      path: '/benefits'
-      fullPath: '/benefits'
-      preLoaderRoute: typeof AuthenticatedBenefitsRouteImport
+    '/_authenticated/attendance': {
+      id: '/_authenticated/attendance'
+      path: '/attendance'
+      fullPath: '/attendance'
+      preLoaderRoute: typeof AuthenticatedAttendanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/audit': {
@@ -492,74 +422,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/attendance': {
-      id: '/_authenticated/attendance'
-      path: '/attendance'
-      fullPath: '/attendance'
-      preLoaderRoute: typeof AuthenticatedAttendanceRouteImport
+    '/_authenticated/benefits': {
+      id: '/_authenticated/benefits'
+      path: '/benefits'
+      fullPath: '/benefits'
+      preLoaderRoute: typeof AuthenticatedBenefitsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/payroll/runs': {
-      id: '/_authenticated/payroll/runs'
-      path: '/payroll/runs'
-      fullPath: '/payroll/runs'
-      preLoaderRoute: typeof AuthenticatedPayrollRunsRouteImport
+    '/_authenticated/contracts': {
+      id: '/_authenticated/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof AuthenticatedContractsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/payroll/payslips': {
-      id: '/_authenticated/payroll/payslips'
-      path: '/payroll/payslips'
-      fullPath: '/payroll/payslips'
-      preLoaderRoute: typeof AuthenticatedPayrollPayslipsRouteImport
+    '/_authenticated/departments': {
+      id: '/_authenticated/departments'
+      path: '/departments'
+      fullPath: '/departments'
+      preLoaderRoute: typeof AuthenticatedDepartmentsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/payroll/config': {
-      id: '/_authenticated/payroll/config'
-      path: '/payroll/config'
-      fullPath: '/payroll/config'
-      preLoaderRoute: typeof AuthenticatedPayrollConfigRouteImport
+    '/_authenticated/employees': {
+      id: '/_authenticated/employees'
+      path: '/employees'
+      fullPath: '/employees'
+      preLoaderRoute: typeof AuthenticatedEmployeesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/leave/scheduler': {
-      id: '/_authenticated/leave/scheduler'
-      path: '/leave/scheduler'
-      fullPath: '/leave/scheduler'
-      preLoaderRoute: typeof AuthenticatedLeaveSchedulerRouteImport
+    '/_authenticated/org-chart': {
+      id: '/_authenticated/org-chart'
+      path: '/org-chart'
+      fullPath: '/org-chart'
+      preLoaderRoute: typeof AuthenticatedOrgChartRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/leave/requests': {
-      id: '/_authenticated/leave/requests'
-      path: '/leave/requests'
-      fullPath: '/leave/requests'
-      preLoaderRoute: typeof AuthenticatedLeaveRequestsRouteImport
+    '/_authenticated/performance': {
+      id: '/_authenticated/performance'
+      path: '/performance'
+      fullPath: '/performance'
+      preLoaderRoute: typeof AuthenticatedPerformanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/leave/balances': {
-      id: '/_authenticated/leave/balances'
-      path: '/leave/balances'
-      fullPath: '/leave/balances'
-      preLoaderRoute: typeof AuthenticatedLeaveBalancesRouteImport
+    '/_authenticated/recruitment': {
+      id: '/_authenticated/recruitment'
+      path: '/recruitment'
+      fullPath: '/recruitment'
+      preLoaderRoute: typeof AuthenticatedRecruitmentRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/approvals/workflows': {
-      id: '/_authenticated/approvals/workflows'
-      path: '/approvals/workflows'
-      fullPath: '/approvals/workflows'
-      preLoaderRoute: typeof AuthenticatedApprovalsWorkflowsRouteImport
+    '/_authenticated/schedules': {
+      id: '/_authenticated/schedules'
+      path: '/schedules'
+      fullPath: '/schedules'
+      preLoaderRoute: typeof AuthenticatedSchedulesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/approvals/pending': {
-      id: '/_authenticated/approvals/pending'
-      path: '/approvals/pending'
-      fullPath: '/approvals/pending'
-      preLoaderRoute: typeof AuthenticatedApprovalsPendingRouteImport
+    '/_authenticated/self-service': {
+      id: '/_authenticated/self-service'
+      path: '/self-service'
+      fullPath: '/self-service'
+      preLoaderRoute: typeof AuthenticatedSelfServiceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/approvals/alerts': {
-      id: '/_authenticated/approvals/alerts'
-      path: '/approvals/alerts'
-      fullPath: '/approvals/alerts'
-      preLoaderRoute: typeof AuthenticatedApprovalsAlertsRouteImport
+    '/_authenticated/statistics': {
+      id: '/_authenticated/statistics'
+      path: '/statistics'
+      fullPath: '/statistics'
+      preLoaderRoute: typeof AuthenticatedStatisticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/training': {
+      id: '/_authenticated/training'
+      path: '/training'
+      fullPath: '/training'
+      preLoaderRoute: typeof AuthenticatedTrainingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin/users': {
@@ -569,11 +513,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/settings': {
-      id: '/_authenticated/admin/settings'
-      path: '/admin/settings'
-      fullPath: '/admin/settings'
-      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+    '/_authenticated/approvals/alerts': {
+      id: '/_authenticated/approvals/alerts'
+      path: '/approvals/alerts'
+      fullPath: '/approvals/alerts'
+      preLoaderRoute: typeof AuthenticatedApprovalsAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/approvals/pending': {
+      id: '/_authenticated/approvals/pending'
+      path: '/approvals/pending'
+      fullPath: '/approvals/pending'
+      preLoaderRoute: typeof AuthenticatedApprovalsPendingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/approvals/workflows': {
+      id: '/_authenticated/approvals/workflows'
+      path: '/approvals/workflows'
+      fullPath: '/approvals/workflows'
+      preLoaderRoute: typeof AuthenticatedApprovalsWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leave/balances': {
+      id: '/_authenticated/leave/balances'
+      path: '/leave/balances'
+      fullPath: '/leave/balances'
+      preLoaderRoute: typeof AuthenticatedLeaveBalancesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leave/requests': {
+      id: '/_authenticated/leave/requests'
+      path: '/leave/requests'
+      fullPath: '/leave/requests'
+      preLoaderRoute: typeof AuthenticatedLeaveRequestsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/leave/scheduler': {
+      id: '/_authenticated/leave/scheduler'
+      path: '/leave/scheduler'
+      fullPath: '/leave/scheduler'
+      preLoaderRoute: typeof AuthenticatedLeaveSchedulerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payroll/config': {
+      id: '/_authenticated/payroll/config'
+      path: '/payroll/config'
+      fullPath: '/payroll/config'
+      preLoaderRoute: typeof AuthenticatedPayrollConfigRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payroll/payslips': {
+      id: '/_authenticated/payroll/payslips'
+      path: '/payroll/payslips'
+      fullPath: '/payroll/payslips'
+      preLoaderRoute: typeof AuthenticatedPayrollPayslipsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/payroll/runs': {
+      id: '/_authenticated/payroll/runs'
+      path: '/payroll/runs'
+      fullPath: '/payroll/runs'
+      preLoaderRoute: typeof AuthenticatedPayrollRunsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -646,3 +646,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
