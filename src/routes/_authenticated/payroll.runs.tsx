@@ -13,7 +13,7 @@ import { RoleGuard } from "@/components/app/RoleGuard";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
 import { formatCurrency } from "@/lib/format";
-import { exportPayrollRunToExcel } from "@/lib/export-utils";
+import { exportPayrollRunToExcel, exportPayrollRunToPdf } from "@/lib/export-utils";
 
 export const Route = createFileRoute("/_authenticated/payroll/runs")({
   head: () => ({
@@ -92,14 +92,17 @@ function Page() {
     runs.refresh();
   };
 
-  const handleExport = () => {
+  const period = selectedRun
+    ? `${new Date(selectedRun.period_start).toLocaleDateString()} - ${new Date(selectedRun.period_end).toLocaleDateString()}`
+    : "";
+  const handleExportXlsx = () => {
     if (selectedRun && selectedPayslips.length > 0) {
-      const period = `${new Date(selectedRun.period_start).toLocaleDateString()} - ${new Date(selectedRun.period_end).toLocaleDateString()}`;
-      exportPayrollRunToExcel(
-        selectedRunId!,
-        selectedPayslips,
-        `nomina_${period}`
-      );
+      exportPayrollRunToExcel(selectedRunId!, selectedPayslips, `nomina_${period}`);
+    }
+  };
+  const handleExportPdf = () => {
+    if (selectedRun && selectedPayslips.length > 0) {
+      exportPayrollRunToPdf(selectedPayslips, { period, currency: selectedRun.currency }, `nomina_${period}`);
     }
   };
 
@@ -279,31 +282,17 @@ function Page() {
                     <TableHead>Bruto</TableHead>
                     <TableHead>Descuentos</TableHead>
                     <TableHead>Neto</TableHead>
-                    <TableHead>Estado</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {selectedPayslips.map((p: any) => (
                     <TableRow key={p.id}>
-                      <TableCell className="font-mono text-xs">
-                        {p.employee_code}
-                      </TableCell>
+                      <TableCell className="font-mono text-xs">{p.employee_code ?? "—"}</TableCell>
                       <TableCell>{p.employee_name}</TableCell>
-                      <TableCell className="text-sm">
-                        {p.department}
-                      </TableCell>
-                      <TableCell className="font-mono">
-                        {formatCurrency(p.gross_amount, selectedRun.currency)}
-                      </TableCell>
-                      <TableCell className="font-mono text-red-600">
-                        -{formatCurrency(p.deductions_amount || 0, selectedRun.currency)}
-                      </TableCell>
-                      <TableCell className="font-mono font-bold">
-                        {formatCurrency(p.net_amount, selectedRun.currency)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{p.status}</Badge>
-                      </TableCell>
+                      <TableCell className="text-sm">{p.department}</TableCell>
+                      <TableCell className="font-mono">{formatCurrency(p.gross ?? 0, selectedRun.currency)}</TableCell>
+                      <TableCell className="font-mono text-red-600">-{formatCurrency(p.deductions ?? 0, selectedRun.currency)}</TableCell>
+                      <TableCell className="font-mono font-bold">{formatCurrency(p.net ?? 0, selectedRun.currency)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -311,24 +300,22 @@ function Page() {
             </div>
 
             {selectedRun.notes && (
-              <div className="bg-gray-50 p-3 rounded mb-4">
-                <p className="text-sm text-gray-600 mb-1">Notas:</p>
+              <div className="bg-muted/40 p-3 rounded mb-4">
+                <p className="text-sm text-muted-foreground mb-1">Notas:</p>
                 <p className="text-sm">{selectedRun.notes}</p>
               </div>
             )}
 
-            <DialogFooter className="flex justify-between">
-              <Button
-                variant="outline"
-                onClick={handleExport}
-                disabled={selectedPayslips.length === 0}
-              >
-                <FileDown className="h-4 w-4 mr-2" />
-                Descargar Excel
-              </Button>
-              <Button variant="secondary" onClick={() => setSelectedRunId(null)}>
-                Cerrar
-              </Button>
+            <DialogFooter className="flex justify-between gap-2">
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={handleExportXlsx} disabled={selectedPayslips.length === 0}>
+                  <FileDown className="h-4 w-4" /> XLSX
+                </Button>
+                <Button variant="outline" onClick={handleExportPdf} disabled={selectedPayslips.length === 0}>
+                  <FileDown className="h-4 w-4" /> PDF
+                </Button>
+              </div>
+              <Button variant="secondary" onClick={() => setSelectedRunId(null)}>Cerrar</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
