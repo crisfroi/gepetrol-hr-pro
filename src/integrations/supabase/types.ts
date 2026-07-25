@@ -1623,6 +1623,39 @@ export type Database = {
           },
         ]
       }
+      performance_criteria: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       performance_cycles: {
         Row: {
           created_at: string
@@ -1718,36 +1751,54 @@ export type Database = {
       }
       performance_reviews: {
         Row: {
+          approved_at: string | null
+          comments: string | null
           created_at: string
           cycle_id: string | null
           employee_id: string
+          evaluator_id: string | null
           id: string
           notes: string | null
+          overall_rating: number | null
           overall_score: number | null
+          period_end: string | null
+          period_start: string | null
           reviewer_id: string | null
           status: string
           submitted_at: string | null
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          comments?: string | null
           created_at?: string
           cycle_id?: string | null
           employee_id: string
+          evaluator_id?: string | null
           id?: string
           notes?: string | null
+          overall_rating?: number | null
           overall_score?: number | null
+          period_end?: string | null
+          period_start?: string | null
           reviewer_id?: string | null
           status?: string
           submitted_at?: string | null
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          comments?: string | null
           created_at?: string
           cycle_id?: string | null
           employee_id?: string
+          evaluator_id?: string | null
           id?: string
           notes?: string | null
+          overall_rating?: number | null
           overall_score?: number | null
+          period_end?: string | null
+          period_start?: string | null
           reviewer_id?: string | null
           status?: string
           submitted_at?: string | null
