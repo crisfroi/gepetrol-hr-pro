@@ -39,6 +39,24 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 function Page() {
+  const { user, hasRole } = useAuth();
+  const canManage = hasRole("admin") || hasRole("hr") || hasRole("supervisor");
+  const [myEmployeeId, setMyEmployeeId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      let { data } = await supabase.from("employees").select("id").eq("user_id", user.id).maybeSingle();
+      if (!data && user.email) {
+        const { data: byEmail } = await supabase.from("employees").select("id, user_id").eq("email", user.email).maybeSingle();
+        if (byEmail) {
+          if (!byEmail.user_id) await supabase.from("employees").update({ user_id: user.id }).eq("id", byEmail.id);
+          data = { id: byEmail.id } as any;
+        }
+      }
+      setMyEmployeeId(data?.id ?? null);
+    })();
+  }, [user?.id, user?.email]);
+
   const reqs = useSupabaseList<Req>("leave_requests", { order: { column: "start_date", ascending: false } });
   const emps = useSupabaseList<Emp>("employees", { select: "id, first_name, last_name, employee_code", order: { column: "last_name" } });
   const types = useSupabaseList<Type>("leave_types", { select: "id, name", order: { column: "name" } });
