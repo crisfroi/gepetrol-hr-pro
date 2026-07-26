@@ -13,6 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/app/PageHeader";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
+import { generatePermitPDF } from "@/lib/permit-pdf";
+import { registerDocumentAudit } from "@/lib/document-audit";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/leave/requests")({
   head: () => ({
@@ -40,9 +45,53 @@ function Page() {
   const empName = (id: string) => { const e = emps.data.find((x) => x.id === id); return e ? `${e.first_name} ${e.last_name}` : "—"; };
   const typeName = (id: string) => types.data.find((t) => t.id === id)?.name ?? "—";
 
-  const decide = async (id: string, status: "approved" | "rejected") => {
-    await updateRow("leave_requests", id, { status, decided_at: new Date().toISOString() });
-    reqs.refresh();
+  const decide = async (r: Req, status: "approved" | "rejected") => {
+    try {
+      const decidedAt = new Date().toISOString();
+      await updateRow("leave_requests", r.id, { status, decided_at: decidedAt });
+      const emp = emps.data.find((e) => e.id === r.employee_id);
+      const type = types.data.find((t) => t.id === r.leave_type_id);
+      const { data: userRes } = await supabase.auth.getUser();
+      const approver = userRes?.user?.email ?? "RRHH";
+      const audit = await registerDocumentAudit({
+        documentType: "receipt",
+        entityTable: "leave_requests",
+        entityId: r.id,
+        payload: { request: r, decision: status, approver, decided_at: decidedAt },
+      });
+      generatePermitPDF({
+        request: { ...r, decided_at: decidedAt },
+        employee: emp ? { first_name: emp.first_name, last_name: emp.last_name, employee_code: emp.employee_code } : null,
+        leaveType: type ? { name: type.name } : null,
+        decision: status,
+        approver,
+        auditHash: audit.auditHash,
+      });
+      toast.success(`Solicitud ${status === "approved" ? "aprobada" : "rechazada"} · documento generado`);
+      reqs.refresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const downloadPermit = async (r: Req) => {
+    const emp = emps.data.find((e) => e.id === r.employee_id);
+    const type = types.data.find((t) => t.id === r.leave_type_id);
+    const { data: userRes } = await supabase.auth.getUser();
+    const audit = await registerDocumentAudit({
+      documentType: "receipt",
+      entityTable: "leave_requests",
+      entityId: r.id,
+      payload: { request: r, decision: r.status, regenerated: true },
+    });
+    generatePermitPDF({
+      request: r,
+      employee: emp ? { first_name: emp.first_name, last_name: emp.last_name, employee_code: emp.employee_code } : null,
+      leaveType: type ? { name: type.name } : null,
+      decision: r.status === "approved" ? "approved" : "rejected",
+      approver: userRes?.user?.email ?? "RRHH",
+      auditHash: audit.auditHash,
+    });
   };
 
   return (
@@ -69,12 +118,17 @@ function Page() {
                   <TableCell>{r.days_requested}</TableCell>
                   <TableCell><Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>{r.status}</Badge></TableCell>
                   <TableCell>
-                    {r.status === "pending" && (
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="secondary" onClick={() => decide(r.id, "approved")}>Aprobar</Button>
-                        <Button size="sm" variant="ghost" onClick={() => decide(r.id, "rejected")}>Rechazar</Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1">
+                      {(r.status === "pending" || r.status === "submitted") && (
+                        <>
+                          <Button size="sm" variant="secondary" onClick={() => decide(r, "approved")}>Aprobar</Button>
+                          <Button size="sm" variant="ghost" onClick={() => decide(r, "rejected")}>Rechazar</Button>
+                        </>
+                      )}
+                      {(r.status === "approved" || r.status === "rejected") && (
+                        <Button size="sm" variant="outline" onClick={() => downloadPermit(r)}><FileDown className="h-4 w-4" /> Documento</Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}</TableBody>

@@ -10,7 +10,7 @@ export type DocumentAuditInput = {
 
 async function sha256Hex(value: string) {
   const bytes = new TextEncoder().encode(value);
-  const hash = await crypto.subtle.extensions.digest("SHA-256", bytes);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(hash)).map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
