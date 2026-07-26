@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
 import { generatePermitPDF } from "@/lib/permit-pdf";
 import { registerDocumentAudit } from "@/lib/document-audit";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { FileDown } from "lucide-react";
 
