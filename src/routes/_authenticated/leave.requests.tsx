@@ -118,7 +118,7 @@ function Page() {
       <PageHeader title="Solicitudes de permiso" description="Vacaciones, permisos y ausencias. Aprobación por RRHH y supervisores." actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Nueva solicitud</Button></DialogTrigger>
-          <ReqForm emps={emps.data} types={types.data} onDone={() => { setOpen(false); reqs.refresh(); }} />
+          <ReqForm emps={emps.data} types={types.data} canPickEmployee={canManage} currentEmployeeId={myEmployeeId} onDone={() => { setOpen(false); reqs.refresh(); }} />
         </Dialog>
       } />
       <Card>
