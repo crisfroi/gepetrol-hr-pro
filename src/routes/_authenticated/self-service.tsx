@@ -104,7 +104,10 @@ function Page() {
     return (
       <>
         <PageHeader title="Portal del empleado" />
-        <EmptyState title="Sin ficha de empleado" description="Tu usuario no está vinculado a una ficha de empleado. Contacta con RRHH." />
+        <EmptyState
+          title="Sin ficha de empleado"
+          description={`No encontramos una ficha vinculada a ${user?.email ?? "tu usuario"}. RRHH debe crear un empleado con ese mismo email o vincular tu usuario manualmente.`}
+        />
       </>
     );
   }
