@@ -159,20 +159,31 @@ function Page() {
   );
 }
 
-function ReqForm({ emps, types, onDone }: { emps: Emp[]; types: Type[]; onDone: () => void }) {
+function ReqForm({ emps, types, canPickEmployee, currentEmployeeId, onDone }: { emps: Emp[]; types: Type[]; canPickEmployee: boolean; currentEmployeeId: string | null; onDone: () => void }) {
   const [f, setF] = useState({ employee_id: "", leave_type_id: "", start_date: "", end_date: "", reason: "" });
   const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (!canPickEmployee && currentEmployeeId) setF((s) => ({ ...s, employee_id: currentEmployeeId }));
+  }, [canPickEmployee, currentEmployeeId]);
   const days = f.start_date && f.end_date ? Math.max(1, Math.round((+new Date(f.end_date) - +new Date(f.start_date)) / 86400000) + 1) : 0;
+  const myName = (() => { const e = emps.find((x) => x.id === currentEmployeeId); return e ? `${e.first_name} ${e.last_name}` : "Tu ficha"; })();
+  const disabled = saving || !f.leave_type_id || !days || (!f.employee_id);
   return (
     <DialogContent>
       <DialogHeader><DialogTitle>Nueva solicitud</DialogTitle></DialogHeader>
       <div className="grid gap-3">
-        <div><Label>Empleado</Label>
-          <Select value={f.employee_id} onValueChange={(v) => setF({ ...f, employee_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-            <SelectContent>{emps.map((e) => <SelectItem key={e.id} value={e.id}>{e.employee_code} — {e.first_name} {e.last_name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
+        {canPickEmployee ? (
+          <div><Label>Empleado</Label>
+            <Select value={f.employee_id} onValueChange={(v) => setF({ ...f, employee_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+              <SelectContent>{emps.map((e) => <SelectItem key={e.id} value={e.id}>{e.employee_code} — {e.first_name} {e.last_name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        ) : currentEmployeeId ? (
+          <div className="rounded border bg-muted/30 px-3 py-2 text-sm">Solicitando como <strong>{myName}</strong></div>
+        ) : (
+          <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">Tu usuario no está vinculado a una ficha de empleado. Contacta con RRHH.</div>
+        )}
         <div><Label>Tipo de permiso</Label>
           <Select value={f.leave_type_id} onValueChange={(v) => setF({ ...f, leave_type_id: v })}>
             <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
@@ -187,7 +198,7 @@ function ReqForm({ emps, types, onDone }: { emps: Emp[]; types: Type[]; onDone: 
         <div><Label>Motivo</Label><Textarea value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} rows={3} /></div>
       </div>
       <DialogFooter>
-        <Button disabled={saving || !f.employee_id || !f.leave_type_id || !days} onClick={async () => {
+        <Button disabled={disabled} onClick={async () => {
           setSaving(true);
           try {
             await insertRow("leave_requests", {
