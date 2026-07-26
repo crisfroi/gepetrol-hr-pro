@@ -13,6 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/app/PageHeader";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
+import { generatePermitPDF } from "@/lib/permit-pdf";
+import { registerDocumentAudit } from "@/lib/document-audit";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/leave/requests")({
   head: () => ({
