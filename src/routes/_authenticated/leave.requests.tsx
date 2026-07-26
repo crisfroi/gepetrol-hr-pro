@@ -118,12 +118,17 @@ function Page() {
                   <TableCell>{r.days_requested}</TableCell>
                   <TableCell><Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>{r.status}</Badge></TableCell>
                   <TableCell>
-                    {r.status === "pending" && (
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="secondary" onClick={() => decide(r.id, "approved")}>Aprobar</Button>
-                        <Button size="sm" variant="ghost" onClick={() => decide(r.id, "rejected")}>Rechazar</Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1">
+                      {(r.status === "pending" || r.status === "submitted") && (
+                        <>
+                          <Button size="sm" variant="secondary" onClick={() => decide(r, "approved")}>Aprobar</Button>
+                          <Button size="sm" variant="ghost" onClick={() => decide(r, "rejected")}>Rechazar</Button>
+                        </>
+                      )}
+                      {(r.status === "approved" || r.status === "rejected") && (
+                        <Button size="sm" variant="outline" onClick={() => downloadPermit(r)}><FileDown className="h-4 w-4" /> Documento</Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}</TableBody>
