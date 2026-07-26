@@ -1,4 +1,5 @@
-import { Bell, LogOut, Menu, Search, User as UserIcon } from "lucide-react";
+import { Bell, LogOut, Menu, User as UserIcon } from "lucide-react";
+import { GlobalSearch } from "./GlobalSearch";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
