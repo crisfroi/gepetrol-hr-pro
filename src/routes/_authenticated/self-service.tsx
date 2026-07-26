@@ -47,7 +47,20 @@ function Page() {
     (async () => {
       if (!user?.id) return;
       setLoading(true);
-      const { data: emp } = await supabase.from("employees").select("*").eq("user_id", user.id).maybeSingle();
+      let { data: emp } = await supabase.from("employees").select("*").eq("user_id", user.id).maybeSingle();
+      // Auto-link: si no hay ficha vinculada, intentar por email
+      if (!emp && user.email) {
+        const { data: byEmail } = await supabase.from("employees").select("*").eq("email", user.email).maybeSingle();
+        if (byEmail) {
+          if (!byEmail.user_id) {
+            const { data: linked } = await supabase.from("employees").update({ user_id: user.id }).eq("id", byEmail.id).select().maybeSingle();
+            emp = linked ?? byEmail;
+            toast.success("Ficha de empleado vinculada a tu usuario");
+          } else {
+            emp = byEmail;
+          }
+        }
+      }
       setEmployee(emp);
       const [types, myReqs, mySlips, team] = await Promise.all([
         supabase.from("leave_types").select("id, name, requires_approval"),
@@ -63,7 +76,7 @@ function Page() {
       setTeamRequests((team.data ?? []) as any);
       setLoading(false);
     })();
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   const refresh = () => {
     if (user?.id) {
