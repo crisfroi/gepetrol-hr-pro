@@ -70,17 +70,16 @@ function Page() {
     TrainingProgram
   >("training_programs", {
     select: "*",
-    orderBy: "start_date",
-    descending: true,
+    order: { column: "start_date", ascending: false },
   });
 
   const { data: enrollments, refetch: refetchEnrollments } = useSupabaseList<
     TrainingEnrollment
   >("training_enrollment", {
     select: "*",
-    orderBy: "enrollment_date",
-    descending: true,
+    order: { column: "enrollment_date", ascending: false },
   });
+
 
   const handleCreate = async (formData: any) => {
     try {

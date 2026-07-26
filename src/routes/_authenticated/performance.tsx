@@ -1,25 +1,27 @@
-// @ts-nocheck
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import {
-  Plus,
-  Search,
-  Edit2,
-  Trash2,
-  X,
-  AlertCircle,
-} from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Search, Users } from "lucide-react";
 import { RoleGuard } from "@/components/app/RoleGuard";
-import { useSupabaseList, insertRow, updateRow, deleteRow } from "@/lib/data-hooks";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { PageHeader } from "@/components/app/PageHeader";
+import { LoadingState, EmptyState } from "@/components/app/DataStates";
+import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/performance")({
   head: () => ({
     meta: [
       { title: "Evaluación de Desempeño · GEPETROL RRHH" },
-      {
-        name: "description",
-        content: "Ciclos de evaluación, objetivos y feedback 360°.",
-      },
+      { name: "description", content: "Ciclos de evaluación y feedback." },
     ],
   }),
   component: () => (
@@ -29,665 +31,227 @@ export const Route = createFileRoute("/_authenticated/performance")({
   ),
 });
 
-interface PerformanceReview {
+type Review = {
   id: string;
   employee_id: string;
-  evaluator_id: string;
   period_start: string;
   period_end: string;
-  overall_rating: number;
-  comments: string;
-  status: "draft" | "submitted" | "approved" | "archived";
+  overall_rating: number | null;
+  comments: string | null;
+  status: string;
   created_at: string;
-  submitted_at: string;
-  approved_at: string;
-}
-
-interface PerformanceCriteria {
-  id: string;
-  name: string;
-  description: string;
-  weight: number;
-  category: "technical" | "behavioral" | "productivity" | "compliance";
-  active: boolean;
-  created_at: string;
-}
-
-interface ReviewFeedback {
-  id: string;
-  review_id: string;
-  criterion_id: string;
-  rating: number;
-  notes: string;
-  created_at: string;
-}
+};
+type Emp = { id: string; first_name: string; last_name: string; employee_code: string; department_id: string | null };
+type Dept = { id: string; name: string };
 
 function Page() {
-  const [activeTab, setActiveTab] = useState<"reviews" | "criteria">("reviews");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [showNewDialog, setShowNewDialog] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const reviews = useSupabaseList<Review>("performance_reviews", { order: { column: "created_at", ascending: false } });
+  const emps = useSupabaseList<Emp>("employees", { select: "id, first_name, last_name, employee_code, department_id", order: { column: "last_name" } });
+  const depts = useSupabaseList<Dept>("departments", { select: "id, name" });
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
-  const { data: reviews, refetch: refetchReviews } = useSupabaseList<
-    PerformanceReview
-  >("performance_reviews", {
-    select: "*",
-    orderBy: "created_at",
-    descending: true,
-  });
-
-  const { data: criteria, refetch: refetchCriteria } = useSupabaseList<
-    PerformanceCriteria
-  >("performance_criteria", {
-    select: "*",
-    orderBy: "created_at",
-    descending: true,
-  });
-
-  const handleCreate = async (formData: any) => {
-    try {
-      const table =
-        activeTab === "reviews" ? "performance_reviews" : "performance_criteria";
-      await insertRow(table, formData);
-
-      if (activeTab === "reviews") refetchReviews();
-      else refetchCriteria();
-
-      setShowNewDialog(false);
-    } catch (error) {
-      console.error("Error creating:", error);
-    }
+  const empName = (id: string) => {
+    const e = emps.data.find((x) => x.id === id);
+    return e ? `${e.first_name} ${e.last_name}` : "—";
   };
 
-  const handleUpdate = async (id: string, formData: any) => {
-    try {
-      const table =
-        activeTab === "reviews" ? "performance_reviews" : "performance_criteria";
-      await updateRow(table, id, formData);
-
-      if (activeTab === "reviews") refetchReviews();
-      else refetchCriteria();
-
-      setEditingItem(null);
-    } catch (error) {
-      console.error("Error updating:", error);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("¿Está seguro de que desea eliminar este registro?")) {
-      return;
-    }
-    try {
-      const table =
-        activeTab === "reviews" ? "performance_reviews" : "performance_criteria";
-      await deleteRow(table, id);
-
-      if (activeTab === "reviews") refetchReviews();
-      else refetchCriteria();
-    } catch (error) {
-      console.error("Error deleting:", error);
-    }
-  };
-
-  const filteredReviews = reviews?.filter((r) => {
-    const matchesSearch =
-      r.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.comments?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === "all" || r.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  const filteredCriteria = criteria?.filter((c) => {
-    return (
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.description?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  const filtered = useMemo(() => {
+    const s = search.toLowerCase();
+    return reviews.data.filter((r) => !s || empName(r.employee_id).toLowerCase().includes(s) || r.status.includes(s));
+  }, [reviews.data, search, emps.data]);
 
   return (
-    <div className="performance-container space-y-6 p-6">
-      <div className="performance-header">
-        <h1 className="text-3xl font-bold">Evaluación de Desempeño</h1>
-        <p className="text-gray-600">
-          Gestiona evaluaciones, criterios y feedback 360°
-        </p>
-      </div>
+    <>
+      <PageHeader
+        title="Evaluación de Desempeño"
+        description="Ciclos, objetivos y feedback."
+        actions={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button><Plus className="h-4 w-4" /> Nueva evaluación</Button>
+            </DialogTrigger>
+            <BulkReviewForm emps={emps.data} depts={depts.data} onDone={() => { setOpen(false); reviews.refresh(); }} />
+          </Dialog>
+        }
+      />
 
-      <div className="performance-tabs flex gap-4 border-b">
-        <button
-          onClick={() => setActiveTab("reviews")}
-          className={`tab-button px-4 py-2 font-medium transition-colors ${
-            activeTab === "reviews"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Evaluaciones
-        </button>
-        <button
-          onClick={() => setActiveTab("criteria")}
-          className={`tab-button px-4 py-2 font-medium transition-colors ${
-            activeTab === "criteria"
-              ? "border-b-2 border-blue-500 text-blue-600"
-              : "text-gray-600 hover:text-gray-900"
-          }`}
-        >
-          Criterios
-        </button>
-      </div>
-
-      {activeTab === "reviews" && (
-        <div className="reviews-section space-y-4">
-          <div className="reviews-controls flex gap-4 items-center">
-            <div className="search-box flex items-center gap-2 flex-1 bg-white border rounded-lg px-3 py-2">
-              <Search size={18} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar evaluación..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 outline-none"
-              />
-            </div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="filter-select px-3 py-2 border rounded-lg text-sm"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="draft">Borrador</option>
-              <option value="submitted">Enviada</option>
-              <option value="approved">Aprobada</option>
-              <option value="archived">Archivada</option>
-            </select>
-            <button
-              onClick={() => setShowNewDialog(true)}
-              className="new-btn flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-              <Plus size={18} />
-              Nueva Evaluación
-            </button>
+      <Card className="mb-4">
+        <CardContent className="p-4">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Buscar por empleado o estado..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8" />
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="reviews-list space-y-3">
-            {filteredReviews?.length === 0 ? (
-              <div className="empty-state text-center py-8 text-gray-500">
-                <AlertCircle className="mx-auto mb-2" size={32} />
-                <p>No hay evaluaciones</p>
-              </div>
-            ) : (
-              filteredReviews?.map((review) => (
-                <div
-                  key={review.id}
-                  className="review-card bg-white border rounded-lg p-4 hover:shadow-md transition"
-                >
-                  <div className="review-header flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">
-                        Empleado: {review.employee_id}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        Evaluador: {review.evaluator_id}
-                      </p>
-                    </div>
-                    <div className="status-badge">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          review.status === "approved"
-                            ? "bg-green-100 text-green-800"
-                            : review.status === "submitted"
-                            ? "bg-blue-100 text-blue-800"
-                            : review.status === "draft"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {review.status === "approved"
-                          ? "Aprobada"
-                          : review.status === "submitted"
-                          ? "Enviada"
-                          : review.status === "draft"
-                          ? "Borrador"
-                          : "Archivada"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="review-rating mb-3 py-3 border-t border-b">
-                    <span className="text-gray-600">Calificación General:</span>
-                    <p className="font-bold text-2xl text-blue-600">
-                      {review.overall_rating.toFixed(1)}/5
-                    </p>
-                  </div>
-
-                  {review.comments && (
-                    <div className="review-comments mb-4 p-3 bg-gray-50 rounded">
-                      <span className="text-sm text-gray-600">Comentarios:</span>
-                      <p className="text-sm mt-1">{review.comments}</p>
-                    </div>
-                  )}
-
-                  <div className="review-period mb-3 text-sm text-gray-600">
-                    <span className="font-medium">Período:</span>
-                    <p>
-                      {new Date(review.period_start).toLocaleDateString()} -{" "}
-                      {new Date(review.period_end).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <div className="review-actions flex gap-2">
-                    <button
-                      onClick={() => setEditingItem(review)}
-                      className="edit-btn flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded transition text-sm"
-                    >
-                      <Edit2 size={16} />
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(review.id)}
-                      className="delete-btn flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded transition text-sm"
-                    >
-                      <Trash2 size={16} />
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {activeTab === "criteria" && (
-        <div className="criteria-section space-y-4">
-          <div className="criteria-controls flex gap-4 items-center">
-            <div className="search-box flex items-center gap-2 flex-1 bg-white border rounded-lg px-3 py-2">
-              <Search size={18} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar criterio..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 outline-none"
-              />
-            </div>
-            <button
-              onClick={() => setShowNewDialog(true)}
-              className="new-btn flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-            >
-              <Plus size={18} />
-              Nuevo Criterio
-            </button>
-          </div>
-
-          <div className="criteria-list space-y-3">
-            {filteredCriteria?.length === 0 ? (
-              <div className="empty-state text-center py-8 text-gray-500">
-                <AlertCircle className="mx-auto mb-2" size={32} />
-                <p>No hay criterios de evaluación</p>
-              </div>
-            ) : (
-              filteredCriteria?.map((criterion) => (
-                <div
-                  key={criterion.id}
-                  className="criterion-card bg-white border rounded-lg p-4 hover:shadow-md transition"
-                >
-                  <div className="criterion-header flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold">{criterion.name}</h3>
-                      <p className="text-sm text-gray-600">
-                        {criterion.description}
-                      </p>
-                    </div>
-                    <div className="status-badge">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          criterion.active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {criterion.active ? "Activo" : "Inactivo"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="criterion-details grid grid-cols-2 gap-4 mb-4 py-3 border-t border-b text-sm">
-                    <div>
-                      <span className="text-gray-600">Categoría:</span>
-                      <p className="font-medium">
-                        {criterion.category.replace(/_/g, " ")}
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-gray-600">Peso:</span>
-                      <p className="font-medium">{criterion.weight}%</p>
-                    </div>
-                  </div>
-
-                  <div className="criterion-actions flex gap-2">
-                    <button
-                      onClick={() => setEditingItem(criterion)}
-                      className="edit-btn flex items-center gap-2 px-3 py-2 text-blue-600 hover:bg-blue-50 rounded transition text-sm"
-                    >
-                      <Edit2 size={16} />
-                      Editar
-                    </button>
-                    <button
-                      onClick={() => handleDelete(criterion.id)}
-                      className="delete-btn flex items-center gap-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded transition text-sm"
-                    >
-                      <Trash2 size={16} />
-                      Eliminar
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {showNewDialog && (
-        <PerformanceDialog
-          tab={activeTab}
-          onClose={() => setShowNewDialog(false)}
-          onSave={handleCreate}
-        />
-      )}
-
-      {editingItem && (
-        <PerformanceDialog
-          tab={activeTab}
-          item={editingItem}
-          onClose={() => setEditingItem(null)}
-          onSave={(data) => handleUpdate(editingItem.id, data)}
-        />
-      )}
-    </div>
+      <Card>
+        <CardContent className="p-4">
+          {reviews.loading ? <LoadingState /> : filtered.length === 0 ? (
+            <EmptyState title="Sin evaluaciones" description="Crea una nueva evaluación seleccionando uno o varios empleados." />
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Empleado</TableHead>
+                  <TableHead>Periodo</TableHead>
+                  <TableHead>Valoración</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((r) => (
+                  <TableRow key={r.id}>
+                    <TableCell>{empName(r.employee_id)}</TableCell>
+                    <TableCell>{new Date(r.period_start).toLocaleDateString()} – {new Date(r.period_end).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-mono">{r.overall_rating ?? "—"}</TableCell>
+                    <TableCell><Badge variant={r.status === "approved" ? "secondary" : "outline"}>{r.status}</Badge></TableCell>
+                    <TableCell>
+                      <RatingDialog review={r} onDone={reviews.refresh} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }
 
-function PerformanceDialog({
-  tab,
-  item,
-  onClose,
-  onSave,
-}: {
-  tab: string;
-  item?: any;
-  onClose: () => void;
-  onSave: (data: any) => void;
-}) {
-  const [formData, setFormData] = useState<any>(
-    item ||
-      (tab === "reviews"
-        ? {
-            employee_id: "",
-            evaluator_id: "",
-            period_start: new Date().toISOString().split("T")[0],
-            period_end: new Date().toISOString().split("T")[0],
-            overall_rating: 3,
-            comments: "",
-            status: "draft",
-          }
-        : {
-            name: "",
-            description: "",
-            weight: 50,
-            category: "technical",
-            active: true,
-          })
-  );
+function BulkReviewForm({ emps, depts, onDone }: { emps: Emp[]; depts: Dept[]; onDone: () => void }) {
+  const [deptFilter, setDeptFilter] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
+  const filtered = emps.filter((e) => {
+    if (deptFilter !== "all" && e.department_id !== deptFilter) return false;
+    if (search && !`${e.first_name} ${e.last_name} ${e.employee_code}`.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const toggle = (id: string) => {
+    const n = new Set(selected);
+    n.has(id) ? n.delete(id) : n.add(id);
+    setSelected(n);
+  };
+  const toggleAll = () => {
+    if (filtered.every((e) => selected.has(e.id))) {
+      const n = new Set(selected); filtered.forEach((e) => n.delete(e.id)); setSelected(n);
+    } else {
+      const n = new Set(selected); filtered.forEach((e) => n.add(e.id)); setSelected(n);
+    }
+  };
+
+  const submit = async () => {
+    if (!start || !end || selected.size === 0) return;
+    setSaving(true);
+    try {
+      for (const empId of selected) {
+        await insertRow("performance_reviews", {
+          employee_id: empId,
+          period_start: start,
+          period_end: end,
+          status: "draft",
+        });
+      }
+      toast.success(`${selected.size} evaluación(es) creada(s)`);
+      onDone();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally { setSaving(false); }
   };
 
   return (
-    <div className="dialog-overlay fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="dialog-content bg-white rounded-lg max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="dialog-header sticky top-0 flex justify-between items-center p-4 border-b bg-white">
-          <h2 className="text-lg font-semibold">
-            {item ? "Editar" : "Nueva"}{" "}
-            {tab === "reviews" ? "Evaluación" : "Criterio"}
-          </h2>
-          <button
-            onClick={onClose}
-            className="close-btn text-gray-400 hover:text-gray-600"
-          >
-            <X size={20} />
-          </button>
+    <DialogContent className="max-w-2xl">
+      <DialogHeader><DialogTitle>Nueva evaluación · Selección múltiple</DialogTitle></DialogHeader>
+      <div className="grid gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label>Periodo inicio</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+          <div><Label>Periodo fin</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
         </div>
-
-        <form onSubmit={handleSubmit} className="dialog-body p-4 space-y-4">
-          {tab === "reviews" && (
-            <>
-              <div className="form-group">
-                <label className="block text-sm font-medium mb-1">
-                  ID Empleado
-                </label>
-                <input
-                  type="text"
-                  value={formData.employee_id || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, employee_id: e.target.value })
-                  }
-                  className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="block text-sm font-medium mb-1">
-                  ID Evaluador
-                </label>
-                <input
-                  type="text"
-                  value={formData.evaluator_id || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, evaluator_id: e.target.value })
-                  }
-                  className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="form-row grid grid-cols-2 gap-3">
-                <div className="form-group">
-                  <label className="block text-sm font-medium mb-1">
-                    Desde
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.period_start || ""}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        period_start: e.target.value,
-                      })
-                    }
-                    className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="block text-sm font-medium mb-1">
-                    Hasta
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.period_end || ""}
-                    onChange={(e) =>
-                      setFormData({ ...formData, period_end: e.target.value })
-                    }
-                    className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="block text-sm font-medium mb-1">
-                  Calificación (1-5)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  step="0.1"
-                  value={formData.overall_rating || 3}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      overall_rating: parseFloat(e.target.value),
-                    })
-                  }
-                  className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="block text-sm font-medium mb-1">
-                  Estado
-                </label>
-                <select
-                  value={formData.status || "draft"}
-                  onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
-                  }
-                  className="select-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="draft">Borrador</option>
-                  <option value="submitted">Enviada</option>
-                  <option value="approved">Aprobada</option>
-                  <option value="archived">Archivada</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="block text-sm font-medium mb-1">
-                  Comentarios
-                </label>
-                <textarea
-                  value={formData.comments || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, comments: e.target.value })
-                  }
-                  className="textarea-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                />
-              </div>
-            </>
-          )}
-
-          {tab === "criteria" && (
-            <>
-              <div className="form-group">
-                <label className="block text-sm font-medium mb-1">Nombre</label>
-                <input
-                  type="text"
-                  value={formData.name || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="block text-sm font-medium mb-1">
-                  Descripción
-                </label>
-                <textarea
-                  value={formData.description || ""}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  className="textarea-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={2}
-                />
-              </div>
-
-              <div className="form-row grid grid-cols-2 gap-3">
-                <div className="form-group">
-                  <label className="block text-sm font-medium mb-1">
-                    Categoría
-                  </label>
-                  <select
-                    value={formData.category || "technical"}
-                    onChange={(e) =>
-                      setFormData({ ...formData, category: e.target.value })
-                    }
-                    className="select-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="technical">Técnica</option>
-                    <option value="behavioral">Comportamiento</option>
-                    <option value="productivity">Productividad</option>
-                    <option value="compliance">Cumplimiento</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="block text-sm font-medium mb-1">
-                    Peso (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.weight || 50}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        weight: parseFloat(e.target.value),
-                      })
-                    }
-                    className="input-field w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="form-group flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="active"
-                  checked={formData.active || false}
-                  onChange={(e) =>
-                    setFormData({ ...formData, active: e.target.checked })
-                  }
-                  className="checkbox-field"
-                />
-                <label htmlFor="active" className="text-sm font-medium">
-                  Activo
-                </label>
-              </div>
-            </>
-          )}
-
-          <div className="dialog-actions flex gap-2 pt-4 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="btn-secondary flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50 transition"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="btn-primary flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              {item ? "Actualizar" : "Crear"}
-            </button>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label>Departamento</Label>
+            <Select value={deptFilter} onValueChange={setDeptFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {depts.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
-        </form>
+          <div><Label>Buscar</Label><Input placeholder="Nombre o código" value={search} onChange={(e) => setSearch(e.target.value)} /></div>
+        </div>
+        <div className="flex items-center justify-between border-t pt-2">
+          <div className="text-sm flex items-center gap-2"><Users className="h-4 w-4" /> {selected.size} seleccionados / {filtered.length} visibles</div>
+          <Button variant="outline" size="sm" onClick={toggleAll}>{filtered.every((e) => selected.has(e.id)) && filtered.length ? "Deseleccionar visibles" : "Seleccionar visibles"}</Button>
+        </div>
+        <div className="max-h-64 overflow-y-auto border rounded">
+          {filtered.map((e) => (
+            <label key={e.id} className="flex items-center gap-2 px-3 py-2 border-b hover:bg-muted cursor-pointer">
+              <Checkbox checked={selected.has(e.id)} onCheckedChange={() => toggle(e.id)} />
+              <span className="font-mono text-xs">{e.employee_code}</span>
+              <span className="text-sm">{e.first_name} {e.last_name}</span>
+            </label>
+          ))}
+        </div>
       </div>
-    </div>
+      <DialogFooter>
+        <Button disabled={saving || !start || !end || selected.size === 0} onClick={submit}>
+          {saving ? "Creando..." : `Crear ${selected.size} evaluación(es)`}
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+}
+
+function RatingDialog({ review, onDone }: { review: Review; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState(review.overall_rating ?? 3);
+  const [comments, setComments] = useState(review.comments ?? "");
+  const [status, setStatus] = useState(review.status);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await updateRow("performance_reviews", review.id, { overall_rating: rating, comments, status });
+      toast.success("Guardado");
+      setOpen(false);
+      onDone();
+    } catch (e: any) { toast.error(e.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button size="sm" variant="outline">Evaluar</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Evaluación</DialogTitle></DialogHeader>
+        <div className="grid gap-3">
+          <div><Label>Valoración (1-5)</Label><Input type="number" min={1} max={5} value={rating} onChange={(e) => setRating(Number(e.target.value))} /></div>
+          <div><Label>Comentarios</Label><Textarea value={comments} onChange={(e) => setComments(e.target.value)} rows={4} /></div>
+          <div>
+            <Label>Estado</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Borrador</SelectItem>
+                <SelectItem value="submitted">Enviada</SelectItem>
+                <SelectItem value="approved">Aprobada</SelectItem>
+                <SelectItem value="archived">Archivada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter><Button disabled={saving} onClick={save}>Guardar</Button></DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

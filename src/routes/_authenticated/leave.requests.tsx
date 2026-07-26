@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/app/PageHeader";
 import { LoadingState, EmptyState } from "@/components/app/DataStates";
 import { useSupabaseList, insertRow, updateRow } from "@/lib/data-hooks";
+import { generatePermitPDF } from "@/lib/permit-pdf";
+import { registerDocumentAudit } from "@/lib/document-audit";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { toast } from "sonner";
+import { FileDown } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/leave/requests")({
   head: () => ({
@@ -33,6 +39,24 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
 };
 
 function Page() {
+  const { user, hasRole } = useAuth();
+  const canManage = hasRole("admin") || hasRole("hr") || hasRole("supervisor");
+  const [myEmployeeId, setMyEmployeeId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!user?.id) return;
+    (async () => {
+      let { data } = await supabase.from("employees").select("id").eq("user_id", user.id).maybeSingle();
+      if (!data && user.email) {
+        const { data: byEmail } = await supabase.from("employees").select("id, user_id").eq("email", user.email).maybeSingle();
+        if (byEmail) {
+          if (!byEmail.user_id) await supabase.from("employees").update({ user_id: user.id }).eq("id", byEmail.id);
+          data = { id: byEmail.id } as any;
+        }
+      }
+      setMyEmployeeId(data?.id ?? null);
+    })();
+  }, [user?.id, user?.email]);
+
   const reqs = useSupabaseList<Req>("leave_requests", { order: { column: "start_date", ascending: false } });
   const emps = useSupabaseList<Emp>("employees", { select: "id, first_name, last_name, employee_code", order: { column: "last_name" } });
   const types = useSupabaseList<Type>("leave_types", { select: "id, name", order: { column: "name" } });
@@ -40,9 +64,53 @@ function Page() {
   const empName = (id: string) => { const e = emps.data.find((x) => x.id === id); return e ? `${e.first_name} ${e.last_name}` : "—"; };
   const typeName = (id: string) => types.data.find((t) => t.id === id)?.name ?? "—";
 
-  const decide = async (id: string, status: "approved" | "rejected") => {
-    await updateRow("leave_requests", id, { status, decided_at: new Date().toISOString() });
-    reqs.refresh();
+  const decide = async (r: Req, status: "approved" | "rejected") => {
+    try {
+      const decidedAt = new Date().toISOString();
+      await updateRow("leave_requests", r.id, { status, decided_at: decidedAt });
+      const emp = emps.data.find((e) => e.id === r.employee_id);
+      const type = types.data.find((t) => t.id === r.leave_type_id);
+      const { data: userRes } = await supabase.auth.getUser();
+      const approver = userRes?.user?.email ?? "RRHH";
+      const audit = await registerDocumentAudit({
+        documentType: "receipt",
+        entityTable: "leave_requests",
+        entityId: r.id,
+        payload: { request: r, decision: status, approver, decided_at: decidedAt },
+      });
+      generatePermitPDF({
+        request: { ...r, decided_at: decidedAt },
+        employee: emp ? { first_name: emp.first_name, last_name: emp.last_name, employee_code: emp.employee_code } : null,
+        leaveType: type ? { name: type.name } : null,
+        decision: status,
+        approver,
+        auditHash: audit.auditHash,
+      });
+      toast.success(`Solicitud ${status === "approved" ? "aprobada" : "rechazada"} · documento generado`);
+      reqs.refresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const downloadPermit = async (r: Req) => {
+    const emp = emps.data.find((e) => e.id === r.employee_id);
+    const type = types.data.find((t) => t.id === r.leave_type_id);
+    const { data: userRes } = await supabase.auth.getUser();
+    const audit = await registerDocumentAudit({
+      documentType: "receipt",
+      entityTable: "leave_requests",
+      entityId: r.id,
+      payload: { request: r, decision: r.status, regenerated: true },
+    });
+    generatePermitPDF({
+      request: r,
+      employee: emp ? { first_name: emp.first_name, last_name: emp.last_name, employee_code: emp.employee_code } : null,
+      leaveType: type ? { name: type.name } : null,
+      decision: r.status === "approved" ? "approved" : "rejected",
+      approver: userRes?.user?.email ?? "RRHH",
+      auditHash: audit.auditHash,
+    });
   };
 
   return (
@@ -50,7 +118,7 @@ function Page() {
       <PageHeader title="Solicitudes de permiso" description="Vacaciones, permisos y ausencias. Aprobación por RRHH y supervisores." actions={
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button><Plus className="h-4 w-4" /> Nueva solicitud</Button></DialogTrigger>
-          <ReqForm emps={emps.data} types={types.data} onDone={() => { setOpen(false); reqs.refresh(); }} />
+          <ReqForm emps={emps.data} types={types.data} canPickEmployee={canManage} currentEmployeeId={myEmployeeId} onDone={() => { setOpen(false); reqs.refresh(); }} />
         </Dialog>
       } />
       <Card>
@@ -69,12 +137,17 @@ function Page() {
                   <TableCell>{r.days_requested}</TableCell>
                   <TableCell><Badge variant={STATUS_VARIANT[r.status] ?? "outline"}>{r.status}</Badge></TableCell>
                   <TableCell>
-                    {r.status === "pending" && (
-                      <div className="flex gap-1">
-                        <Button size="sm" variant="secondary" onClick={() => decide(r.id, "approved")}>Aprobar</Button>
-                        <Button size="sm" variant="ghost" onClick={() => decide(r.id, "rejected")}>Rechazar</Button>
-                      </div>
-                    )}
+                    <div className="flex gap-1">
+                      {(r.status === "pending" || r.status === "submitted") && (
+                        <>
+                          <Button size="sm" variant="secondary" onClick={() => decide(r, "approved")}>Aprobar</Button>
+                          <Button size="sm" variant="ghost" onClick={() => decide(r, "rejected")}>Rechazar</Button>
+                        </>
+                      )}
+                      {(r.status === "approved" || r.status === "rejected") && (
+                        <Button size="sm" variant="outline" onClick={() => downloadPermit(r)}><FileDown className="h-4 w-4" /> Documento</Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}</TableBody>
@@ -86,20 +159,31 @@ function Page() {
   );
 }
 
-function ReqForm({ emps, types, onDone }: { emps: Emp[]; types: Type[]; onDone: () => void }) {
+function ReqForm({ emps, types, canPickEmployee, currentEmployeeId, onDone }: { emps: Emp[]; types: Type[]; canPickEmployee: boolean; currentEmployeeId: string | null; onDone: () => void }) {
   const [f, setF] = useState({ employee_id: "", leave_type_id: "", start_date: "", end_date: "", reason: "" });
   const [saving, setSaving] = useState(false);
+  useEffect(() => {
+    if (!canPickEmployee && currentEmployeeId) setF((s) => ({ ...s, employee_id: currentEmployeeId }));
+  }, [canPickEmployee, currentEmployeeId]);
   const days = f.start_date && f.end_date ? Math.max(1, Math.round((+new Date(f.end_date) - +new Date(f.start_date)) / 86400000) + 1) : 0;
+  const myName = (() => { const e = emps.find((x) => x.id === currentEmployeeId); return e ? `${e.first_name} ${e.last_name}` : "Tu ficha"; })();
+  const disabled = saving || !f.leave_type_id || !days || (!f.employee_id);
   return (
     <DialogContent>
       <DialogHeader><DialogTitle>Nueva solicitud</DialogTitle></DialogHeader>
       <div className="grid gap-3">
-        <div><Label>Empleado</Label>
-          <Select value={f.employee_id} onValueChange={(v) => setF({ ...f, employee_id: v })}>
-            <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-            <SelectContent>{emps.map((e) => <SelectItem key={e.id} value={e.id}>{e.employee_code} — {e.first_name} {e.last_name}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
+        {canPickEmployee ? (
+          <div><Label>Empleado</Label>
+            <Select value={f.employee_id} onValueChange={(v) => setF({ ...f, employee_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+              <SelectContent>{emps.map((e) => <SelectItem key={e.id} value={e.id}>{e.employee_code} — {e.first_name} {e.last_name}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        ) : currentEmployeeId ? (
+          <div className="rounded border bg-muted/30 px-3 py-2 text-sm">Solicitando como <strong>{myName}</strong></div>
+        ) : (
+          <div className="rounded border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">Tu usuario no está vinculado a una ficha de empleado. Contacta con RRHH.</div>
+        )}
         <div><Label>Tipo de permiso</Label>
           <Select value={f.leave_type_id} onValueChange={(v) => setF({ ...f, leave_type_id: v })}>
             <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
@@ -114,7 +198,7 @@ function ReqForm({ emps, types, onDone }: { emps: Emp[]; types: Type[]; onDone: 
         <div><Label>Motivo</Label><Textarea value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} rows={3} /></div>
       </div>
       <DialogFooter>
-        <Button disabled={saving || !f.employee_id || !f.leave_type_id || !days} onClick={async () => {
+        <Button disabled={disabled} onClick={async () => {
           setSaving(true);
           try {
             await insertRow("leave_requests", {
