@@ -45,9 +45,53 @@ function Page() {
   const empName = (id: string) => { const e = emps.data.find((x) => x.id === id); return e ? `${e.first_name} ${e.last_name}` : "—"; };
   const typeName = (id: string) => types.data.find((t) => t.id === id)?.name ?? "—";
 
-  const decide = async (id: string, status: "approved" | "rejected") => {
-    await updateRow("leave_requests", id, { status, decided_at: new Date().toISOString() });
-    reqs.refresh();
+  const decide = async (r: Req, status: "approved" | "rejected") => {
+    try {
+      const decidedAt = new Date().toISOString();
+      await updateRow("leave_requests", r.id, { status, decided_at: decidedAt });
+      const emp = emps.data.find((e) => e.id === r.employee_id);
+      const type = types.data.find((t) => t.id === r.leave_type_id);
+      const { data: userRes } = await supabase.auth.getUser();
+      const approver = userRes?.user?.email ?? "RRHH";
+      const audit = await registerDocumentAudit({
+        documentType: "receipt",
+        entityTable: "leave_requests",
+        entityId: r.id,
+        payload: { request: r, decision: status, approver, decided_at: decidedAt },
+      });
+      generatePermitPDF({
+        request: { ...r, decided_at: decidedAt },
+        employee: emp ? { first_name: emp.first_name, last_name: emp.last_name, employee_code: emp.employee_code } : null,
+        leaveType: type ? { name: type.name } : null,
+        decision: status,
+        approver,
+        auditHash: audit.auditHash,
+      });
+      toast.success(`Solicitud ${status === "approved" ? "aprobada" : "rechazada"} · documento generado`);
+      reqs.refresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const downloadPermit = async (r: Req) => {
+    const emp = emps.data.find((e) => e.id === r.employee_id);
+    const type = types.data.find((t) => t.id === r.leave_type_id);
+    const { data: userRes } = await supabase.auth.getUser();
+    const audit = await registerDocumentAudit({
+      documentType: "receipt",
+      entityTable: "leave_requests",
+      entityId: r.id,
+      payload: { request: r, decision: r.status, regenerated: true },
+    });
+    generatePermitPDF({
+      request: r,
+      employee: emp ? { first_name: emp.first_name, last_name: emp.last_name, employee_code: emp.employee_code } : null,
+      leaveType: type ? { name: type.name } : null,
+      decision: r.status === "approved" ? "approved" : "rejected",
+      approver: userRes?.user?.email ?? "RRHH",
+      auditHash: audit.auditHash,
+    });
   };
 
   return (
