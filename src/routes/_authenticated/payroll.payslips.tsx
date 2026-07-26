@@ -80,9 +80,35 @@ function Page() {
     }
   };
 
+  const simulate = async (p: P, mode: "over" | "under" | "reset") => {
+    try {
+      const original = (p as any).__original_net ?? p.net;
+      let newNet = p.net;
+      if (mode === "over") newNet = Math.round(original * 1.35);
+      else if (mode === "under") newNet = Math.round(original * 0.65);
+      else newNet = original;
+      const newDeductions = Math.max(0, p.gross - newNet);
+      await (supabase.from as any)("payslips").update({ net: newNet, deductions: newDeductions }).eq("id", p.id);
+      // dispara detección de anomalías (RPC)
+      const { error } = await (supabase as any).rpc("detect_payment_anomaly", { _payslip_id: p.id, _threshold_pct: 15 });
+      if (error) console.warn("detect_payment_anomaly:", error.message);
+      toast.success(
+        mode === "reset"
+          ? "Recibo restaurado"
+          : `Simulación aplicada (${mode === "over" ? "+35% sobrepago" : "-35% subpago"}). Revisa Alertas.`,
+      );
+      rows.refresh();
+    } catch (e: any) {
+      toast.error(`Error simulando: ${e.message}`);
+    }
+  };
+
   return (
     <>
-      <PageHeader title="Recibos de nomina" description="Detalle por empleado y corrida. Cada PDF queda conectado a un hash auditable." />
+      <PageHeader
+        title="Recibos de nomina"
+        description="Detalle por empleado y corrida. Cada PDF queda conectado a un hash auditable. Usa los botones de simulación para probar el sistema de alertas."
+      />
       <Card>
         <CardContent className="p-4">
           {rows.loading ? <LoadingState /> : rows.data.length === 0 ? (
@@ -97,7 +123,7 @@ function Page() {
                   <TableHead>Bruto</TableHead>
                   <TableHead>Deducciones</TableHead>
                   <TableHead>Neto</TableHead>
-                  <TableHead />
+                  <TableHead>Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>{rows.data.map((p) => {
@@ -110,7 +136,14 @@ function Page() {
                     <TableCell className="font-mono">{formatCurrency(p.gross, p.currency)}</TableCell>
                     <TableCell className="font-mono text-destructive">{formatCurrency(p.deductions, p.currency)}</TableCell>
                     <TableCell className="font-mono font-semibold">{formatCurrency(p.net, p.currency)}</TableCell>
-                    <TableCell><Button size="sm" variant="outline" onClick={() => downloadPDF(p)}><FileDown className="h-4 w-4" /> PDF</Button></TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        <Button size="sm" variant="outline" onClick={() => downloadPDF(p)}><FileDown className="h-4 w-4" /> PDF</Button>
+                        <Button size="sm" variant="ghost" title="Simular sobrepago +35%" onClick={() => simulate(p, "over")}><TrendingUp className="h-4 w-4 text-amber-600" /></Button>
+                        <Button size="sm" variant="ghost" title="Simular subpago -35%" onClick={() => simulate(p, "under")}><TrendingDown className="h-4 w-4 text-destructive" /></Button>
+                        <Button size="sm" variant="ghost" title="Restaurar recibo" onClick={() => simulate(p, "reset")}><RotateCcw className="h-4 w-4" /></Button>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 );
               })}</TableBody>
