@@ -13,6 +13,8 @@ type SeedSummary = {
   employees?: number;
   departments?: number;
   positions?: number;
+  work_schedules?: number;
+  attendance_records?: number;
   payroll_runs?: number;
   payslips?: number;
   deleted_batches?: number;
