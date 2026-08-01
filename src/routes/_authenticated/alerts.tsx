@@ -25,6 +25,8 @@ type AlertRow = {
   reviewed_at: string | null
   reviewer_notes: string | null
 }
+type AlertStatus = AlertRow['status']
+type AlertSeverity = AlertRow['severity']
 
 export const Route = createFileRoute('/_authenticated/alerts')({
   component: AlertsPage,
@@ -32,8 +34,8 @@ export const Route = createFileRoute('/_authenticated/alerts')({
 
 function AlertsPage() {
   const [selectedAlerts, setSelectedAlerts] = useState<Set<string>>(new Set())
-  const [filterStatus, setFilterStatus] = useState<string>('pending')
-  const [filterSeverity, setFilterSeverity] = useState<string>('')
+  const [filterStatus, setFilterStatus] = useState<AlertStatus | 'all'>('pending')
+  const [filterSeverity, setFilterSeverity] = useState<AlertSeverity | 'all'>('all')
   const [reviewNotes, setReviewNotes] = useState('')
 
   const { data: alerts = [], isLoading, refetch } = useQuery({
@@ -45,7 +47,7 @@ function AlertsPage() {
         query = query.eq('status', filterStatus)
       }
 
-      if (filterSeverity) {
+      if (filterSeverity !== 'all') {
         query = query.eq('severity', filterSeverity)
       }
 
@@ -58,7 +60,7 @@ function AlertsPage() {
   })
 
   const updateAlertMutation = useMutation({
-    mutationFn: async ({ alertId, status, notes }: { alertId: string; status: string; notes?: string }) => {
+    mutationFn: async ({ alertId, status, notes }: { alertId: string; status: AlertStatus; notes?: string }) => {
       const { error } = await supabase.from('event_alerts').update({
         status,
         reviewed_at: new Date().toISOString(),
@@ -77,7 +79,7 @@ function AlertsPage() {
   })
 
   const bulkUpdateMutation = useMutation({
-    mutationFn: async ({ status }: { status: string }) => {
+    mutationFn: async ({ status }: { status: AlertStatus }) => {
       const ids = Array.from(selectedAlerts)
       if (ids.length === 0) return
 
@@ -142,7 +144,7 @@ function AlertsPage() {
       </div>
 
       <div className="flex gap-3 flex-wrap items-end">
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
+        <Select value={filterStatus} onValueChange={(value) => setFilterStatus(value as AlertStatus | 'all')}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
@@ -155,12 +157,12 @@ function AlertsPage() {
           </SelectContent>
         </Select>
 
-        <Select value={filterSeverity} onValueChange={setFilterSeverity}>
+        <Select value={filterSeverity} onValueChange={(value) => setFilterSeverity(value as AlertSeverity | 'all')}>
           <SelectTrigger className="w-[200px]">
             <SelectValue placeholder="Severidad" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas</SelectItem>
+            <SelectItem value="all">Todas</SelectItem>
             <SelectItem value="info">Información</SelectItem>
             <SelectItem value="warning">Advertencia</SelectItem>
             <SelectItem value="critical">Crítica</SelectItem>
@@ -266,9 +268,9 @@ function AlertRow({
   alert: AlertRow
   isSelected: boolean
   onToggle: () => void
-  onUpdate: (status: string, notes?: string) => void
+  onUpdate: (status: AlertStatus, notes?: string) => void
   getSeverityIcon: (severity: string) => React.ReactNode
-  getSeverityColor: (severity: string) => string
+  getSeverityColor: (severity: string) => 'default' | 'secondary' | 'destructive' | 'outline'
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
 

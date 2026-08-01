@@ -12,14 +12,13 @@ import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
 
 export const Route = createFileRoute('/_authenticated/employee-portal')({
   component: EmployeePortal,
 })
 
 function EmployeePortal() {
-  const currentUser = supabase.auth.useUser()
-
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -267,6 +266,7 @@ function LeaveTab() {
 }
 
 function PersonalDataTab() {
+  const { user } = useAuth()
   const [address, setAddress] = useState('')
   const [phone, setPhone] = useState('')
   const [bankAccount, setBankAccount] = useState('')
@@ -275,19 +275,20 @@ function PersonalDataTab() {
   const { data: employee, isLoading } = useQuery({
     queryKey: ['current-employee'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('employees').select('*').limit(1).single()
+      const { data, error } = await supabase.from('employees').select('*').eq('user_id', user?.id ?? '').single()
       if (error) throw error
-      return data
+      return data as typeof data & { bank_account_updated_at: string | null }
     },
+    enabled: Boolean(user?.id),
   })
 
   const updateMutation = useMutation({
     mutationFn: async () => {
       const { error } = await (supabase as any).rpc('update_employee_personal_data', {
-        _address: address || null,
+        _address: address ? { formatted: address } : null,
         _phone: phone || null,
-        _bank_account: bankAccount || null,
-        _emergency_contact: emergencyContact || null,
+        _bank_account: bankAccount ? { value: bankAccount } : null,
+        _emergency_contact: emergencyContact ? { formatted: emergencyContact } : null,
       })
       if (error) throw error
     },
@@ -320,7 +321,7 @@ function PersonalDataTab() {
           <div>
             <Label>Dirección</Label>
             <Input
-              value={address || employee?.address || ''}
+              value={address || textValue(employee?.address)}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Tu dirección"
             />
@@ -330,7 +331,7 @@ function PersonalDataTab() {
           <Label>Número de Cuenta Bancaria</Label>
           <Input
             type="password"
-            value={bankAccount || employee?.bank_account || ''}
+            value={bankAccount || textValue(employee?.bank_account)}
             onChange={(e) => setBankAccount(e.target.value)}
             placeholder="IBAN u otro número de cuenta"
           />
@@ -343,7 +344,7 @@ function PersonalDataTab() {
         <div>
           <Label>Contacto de Emergencia</Label>
           <Input
-            value={emergencyContact || employee?.emergency_contact || ''}
+            value={emergencyContact || textValue(employee?.emergency_contact)}
             onChange={(e) => setEmergencyContact(e.target.value)}
             placeholder="Nombre y teléfono"
           />
@@ -361,10 +362,11 @@ function PersonalDataTab() {
 }
 
 function ScheduleTab() {
+  const { user } = useAuth()
   const { data: schedule, isLoading } = useQuery({
     queryKey: ['employee-schedule'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('employees')
         .select(
           `
@@ -378,11 +380,12 @@ function ScheduleTab() {
           )
         `
         )
-        .limit(1)
+        .eq('user_id', user?.id ?? '')
         .single()
       if (error) throw error
       return data
     },
+    enabled: Boolean(user?.id),
   })
 
   if (isLoading) return <div className="text-center py-8">Cargando horario...</div>
@@ -424,4 +427,11 @@ function ScheduleTab() {
       </CardContent>
     </Card>
   )
+}
+
+function textValue(value: unknown) {
+  if (typeof value === 'string') return value
+  if (value && typeof value === 'object' && 'formatted' in value && typeof value.formatted === 'string') return value.formatted
+  if (value && typeof value === 'object' && 'value' in value && typeof value.value === 'string') return value.value
+  return ''
 }

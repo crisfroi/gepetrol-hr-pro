@@ -22,6 +22,7 @@ import {
   GraduationCap,
   Gift,
   UserCircle2,
+  Award,
   History,
   UsersRound,
   SlidersHorizontal,
@@ -50,7 +51,10 @@ export type NavSection = {
 export const NAV_SECTIONS: NavSection[] = [
   {
     title: "General",
-    items: [{ label: "Dashboard", to: "/", icon: LayoutDashboard, status: "ready" }],
+    items: [
+      { label: "Dashboard", to: "/", icon: LayoutDashboard, status: "ready" },
+      { label: "Calendario del equipo", to: "/team-calendar", icon: CalendarRange, status: "ready" },
+    ],
   },
   {
     title: "Gestión de Personal",
@@ -90,6 +94,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Workflow de pagos", to: "/approvals/workflows", icon: ShieldCheck, status: "ready", roles: ["admin", "finance"] },
       { label: "Pendientes de aprobación", to: "/approvals/pending", icon: ClipboardList, status: "ready", roles: ["admin", "finance", "supervisor"] },
       { label: "Alertas de sobrepago", to: "/approvals/alerts", icon: AlertTriangle, status: "ready", roles: ["admin", "finance"] },
+      { label: "Alertas operativas", to: "/alerts", icon: AlertTriangle, status: "ready", roles: ["admin", "hr", "finance", "supervisor"] },
     ],
   },
   {
@@ -99,12 +104,13 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Evaluación de Desempeño", to: "/performance", icon: Target, status: "ready", roles: ["admin", "hr", "supervisor"] },
       { label: "Capacitación", to: "/training", icon: GraduationCap, status: "ready", roles: ["admin", "hr"] },
       { label: "Beneficios", to: "/benefits", icon: Gift, status: "ready", roles: ["admin", "hr"] },
+      { label: "Cumplimiento", to: "/compliance", icon: Award, status: "ready", roles: ["admin", "hr"] },
     ],
   },
   {
     title: "Empleado",
     items: [
-      { label: "Portal del Empleado", to: "/self-service", icon: UserCircle2, status: "ready" },
+      { label: "Portal del Empleado", to: "/employee-portal", icon: UserCircle2, status: "ready" },
     ],
   },
   {

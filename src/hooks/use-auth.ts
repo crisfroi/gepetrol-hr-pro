@@ -31,23 +31,30 @@ export function useAuth() {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setUser(data.session?.user ?? null);
-      setLoading(false);
     });
 
     return () => sub.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
     let cancelled = false;
     (async () => {
-      const [{ data: prof }, { data: rs }] = await Promise.all([
-        supabase.from("profiles").select("id, email, full_name, avatar_url").eq("id", user.id).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", user.id),
-      ]);
-      if (cancelled) return;
-      setProfile((prof as Profile) ?? null);
-      setRoles(((rs ?? []) as { role: AppRole }[]).map((r) => r.role));
+      try {
+        const [{ data: prof }, { data: rs }] = await Promise.all([
+          supabase.from("profiles").select("id, email, full_name, avatar_url").eq("id", user.id).maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", user.id),
+        ]);
+        if (cancelled) return;
+        setProfile((prof as Profile) ?? null);
+        setRoles(((rs ?? []) as { role: AppRole }[]).map((r) => r.role));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;

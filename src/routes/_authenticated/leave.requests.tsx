@@ -45,17 +45,10 @@ function Page() {
   useEffect(() => {
     if (!user?.id) return;
     (async () => {
-      let { data } = await supabase.from("employees").select("id").eq("user_id", user.id).maybeSingle();
-      if (!data && user.email) {
-        const { data: byEmail } = await supabase.from("employees").select("id, user_id").eq("email", user.email).maybeSingle();
-        if (byEmail) {
-          if (!byEmail.user_id) await supabase.from("employees").update({ user_id: user.id }).eq("id", byEmail.id);
-          data = { id: byEmail.id } as any;
-        }
-      }
+      const { data } = await supabase.from("employees").select("id").eq("user_id", user.id).maybeSingle();
       setMyEmployeeId(data?.id ?? null);
     })();
-  }, [user?.id, user?.email]);
+  }, [user?.id]);
 
   const reqs = useSupabaseList<Req>("leave_requests", { order: { column: "start_date", ascending: false } });
   const emps = useSupabaseList<Emp>("employees", { select: "id, first_name, last_name, employee_code", order: { column: "last_name" } });

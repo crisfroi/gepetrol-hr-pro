@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Calendar, FileDown, Plus, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,9 @@ import { generatePayslipPDF } from "@/lib/pdf";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/self-service")({
+  beforeLoad: () => {
+    throw redirect({ to: "/employee-portal" });
+  },
   head: () => ({
     meta: [
       { title: "Portal del empleado · GEPETROL RRHH" },
@@ -47,20 +50,7 @@ function Page() {
     (async () => {
       if (!user?.id) return;
       setLoading(true);
-      let { data: emp } = await supabase.from("employees").select("*").eq("user_id", user.id).maybeSingle();
-      // Auto-link: si no hay ficha vinculada, intentar por email
-      if (!emp && user.email) {
-        const { data: byEmail } = await supabase.from("employees").select("*").eq("email", user.email).maybeSingle();
-        if (byEmail) {
-          if (!byEmail.user_id) {
-            const { data: linked } = await supabase.from("employees").update({ user_id: user.id }).eq("id", byEmail.id).select().maybeSingle();
-            emp = linked ?? byEmail;
-            toast.success("Ficha de empleado vinculada a tu usuario");
-          } else {
-            emp = byEmail;
-          }
-        }
-      }
+      const { data: emp } = await supabase.from("employees").select("*").eq("user_id", user.id).maybeSingle();
       setEmployee(emp);
       const [types, myReqs, mySlips, team] = await Promise.all([
         supabase.from("leave_types").select("id, name, requires_approval"),
@@ -76,7 +66,7 @@ function Page() {
       setTeamRequests((team.data ?? []) as any);
       setLoading(false);
     })();
-  }, [user?.id, user?.email]);
+  }, [user?.id]);
 
   const refresh = () => {
     if (user?.id) {

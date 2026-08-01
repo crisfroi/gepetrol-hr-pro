@@ -13,11 +13,14 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedAlertsRouteImport } from './routes/_authenticated/alerts'
 import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated/attendance'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedBenefitsRouteImport } from './routes/_authenticated/benefits'
+import { Route as AuthenticatedComplianceRouteImport } from './routes/_authenticated/compliance'
 import { Route as AuthenticatedContractsRouteImport } from './routes/_authenticated/contracts'
 import { Route as AuthenticatedDepartmentsRouteImport } from './routes/_authenticated/departments'
+import { Route as AuthenticatedEmployeePortalRouteImport } from './routes/_authenticated/employee-portal'
 import { Route as AuthenticatedEmployeesRouteImport } from './routes/_authenticated/employees'
 import { Route as AuthenticatedOrgChartRouteImport } from './routes/_authenticated/org-chart'
 import { Route as AuthenticatedPerformanceRouteImport } from './routes/_authenticated/performance'
@@ -25,6 +28,7 @@ import { Route as AuthenticatedRecruitmentRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSchedulesRouteImport } from './routes/_authenticated/schedules'
 import { Route as AuthenticatedSelfServiceRouteImport } from './routes/_authenticated/self-service'
 import { Route as AuthenticatedStatisticsRouteImport } from './routes/_authenticated/statistics'
+import { Route as AuthenticatedTeamCalendarRouteImport } from './routes/_authenticated/team-calendar'
 import { Route as AuthenticatedTrainingRouteImport } from './routes/_authenticated/training'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
@@ -57,6 +61,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAlertsRoute = AuthenticatedAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAttendanceRoute = AuthenticatedAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -72,6 +81,11 @@ const AuthenticatedBenefitsRoute = AuthenticatedBenefitsRouteImport.update({
   path: '/benefits',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedComplianceRoute = AuthenticatedComplianceRouteImport.update({
+  id: '/compliance',
+  path: '/compliance',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedContractsRoute = AuthenticatedContractsRouteImport.update({
   id: '/contracts',
   path: '/contracts',
@@ -81,6 +95,12 @@ const AuthenticatedDepartmentsRoute =
   AuthenticatedDepartmentsRouteImport.update({
     id: '/departments',
     path: '/departments',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEmployeePortalRoute =
+  AuthenticatedEmployeePortalRouteImport.update({
+    id: '/employee-portal',
+    path: '/employee-portal',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedEmployeesRoute = AuthenticatedEmployeesRouteImport.update({
@@ -121,6 +141,12 @@ const AuthenticatedStatisticsRoute = AuthenticatedStatisticsRouteImport.update({
   path: '/statistics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTeamCalendarRoute =
+  AuthenticatedTeamCalendarRouteImport.update({
+    id: '/team-calendar',
+    path: '/team-calendar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTrainingRoute = AuthenticatedTrainingRouteImport.update({
   id: '/training',
   path: '/training',
@@ -196,11 +222,14 @@ export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/benefits': typeof AuthenticatedBenefitsRoute
+  '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/departments': typeof AuthenticatedDepartmentsRoute
+  '/employee-portal': typeof AuthenticatedEmployeePortalRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/org-chart': typeof AuthenticatedOrgChartRoute
   '/performance': typeof AuthenticatedPerformanceRoute
@@ -208,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/schedules': typeof AuthenticatedSchedulesRoute
   '/self-service': typeof AuthenticatedSelfServiceRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
+  '/team-calendar': typeof AuthenticatedTeamCalendarRoute
   '/training': typeof AuthenticatedTrainingRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -224,11 +254,14 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/alerts': typeof AuthenticatedAlertsRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/benefits': typeof AuthenticatedBenefitsRoute
+  '/compliance': typeof AuthenticatedComplianceRoute
   '/contracts': typeof AuthenticatedContractsRoute
   '/departments': typeof AuthenticatedDepartmentsRoute
+  '/employee-portal': typeof AuthenticatedEmployeePortalRoute
   '/employees': typeof AuthenticatedEmployeesRoute
   '/org-chart': typeof AuthenticatedOrgChartRoute
   '/performance': typeof AuthenticatedPerformanceRoute
@@ -236,6 +269,7 @@ export interface FileRoutesByTo {
   '/schedules': typeof AuthenticatedSchedulesRoute
   '/self-service': typeof AuthenticatedSelfServiceRoute
   '/statistics': typeof AuthenticatedStatisticsRoute
+  '/team-calendar': typeof AuthenticatedTeamCalendarRoute
   '/training': typeof AuthenticatedTrainingRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -255,11 +289,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/_authenticated/alerts': typeof AuthenticatedAlertsRoute
   '/_authenticated/attendance': typeof AuthenticatedAttendanceRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/benefits': typeof AuthenticatedBenefitsRoute
+  '/_authenticated/compliance': typeof AuthenticatedComplianceRoute
   '/_authenticated/contracts': typeof AuthenticatedContractsRoute
   '/_authenticated/departments': typeof AuthenticatedDepartmentsRoute
+  '/_authenticated/employee-portal': typeof AuthenticatedEmployeePortalRoute
   '/_authenticated/employees': typeof AuthenticatedEmployeesRoute
   '/_authenticated/org-chart': typeof AuthenticatedOrgChartRoute
   '/_authenticated/performance': typeof AuthenticatedPerformanceRoute
@@ -267,6 +304,7 @@ export interface FileRoutesById {
   '/_authenticated/schedules': typeof AuthenticatedSchedulesRoute
   '/_authenticated/self-service': typeof AuthenticatedSelfServiceRoute
   '/_authenticated/statistics': typeof AuthenticatedStatisticsRoute
+  '/_authenticated/team-calendar': typeof AuthenticatedTeamCalendarRoute
   '/_authenticated/training': typeof AuthenticatedTrainingRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
@@ -287,11 +325,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reset-password'
+    | '/alerts'
     | '/attendance'
     | '/audit'
     | '/benefits'
+    | '/compliance'
     | '/contracts'
     | '/departments'
+    | '/employee-portal'
     | '/employees'
     | '/org-chart'
     | '/performance'
@@ -299,6 +340,7 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/self-service'
     | '/statistics'
+    | '/team-calendar'
     | '/training'
     | '/admin/settings'
     | '/admin/users'
@@ -315,11 +357,14 @@ export interface FileRouteTypes {
   to:
     | '/auth'
     | '/reset-password'
+    | '/alerts'
     | '/attendance'
     | '/audit'
     | '/benefits'
+    | '/compliance'
     | '/contracts'
     | '/departments'
+    | '/employee-portal'
     | '/employees'
     | '/org-chart'
     | '/performance'
@@ -327,6 +372,7 @@ export interface FileRouteTypes {
     | '/schedules'
     | '/self-service'
     | '/statistics'
+    | '/team-calendar'
     | '/training'
     | '/'
     | '/admin/settings'
@@ -345,11 +391,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reset-password'
+    | '/_authenticated/alerts'
     | '/_authenticated/attendance'
     | '/_authenticated/audit'
     | '/_authenticated/benefits'
+    | '/_authenticated/compliance'
     | '/_authenticated/contracts'
     | '/_authenticated/departments'
+    | '/_authenticated/employee-portal'
     | '/_authenticated/employees'
     | '/_authenticated/org-chart'
     | '/_authenticated/performance'
@@ -357,6 +406,7 @@ export interface FileRouteTypes {
     | '/_authenticated/schedules'
     | '/_authenticated/self-service'
     | '/_authenticated/statistics'
+    | '/_authenticated/team-calendar'
     | '/_authenticated/training'
     | '/_authenticated/'
     | '/_authenticated/admin/settings'
@@ -408,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/alerts': {
+      id: '/_authenticated/alerts'
+      path: '/alerts'
+      fullPath: '/alerts'
+      preLoaderRoute: typeof AuthenticatedAlertsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/attendance': {
       id: '/_authenticated/attendance'
       path: '/attendance'
@@ -429,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBenefitsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/compliance': {
+      id: '/_authenticated/compliance'
+      path: '/compliance'
+      fullPath: '/compliance'
+      preLoaderRoute: typeof AuthenticatedComplianceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/contracts': {
       id: '/_authenticated/contracts'
       path: '/contracts'
@@ -441,6 +505,13 @@ declare module '@tanstack/react-router' {
       path: '/departments'
       fullPath: '/departments'
       preLoaderRoute: typeof AuthenticatedDepartmentsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/employee-portal': {
+      id: '/_authenticated/employee-portal'
+      path: '/employee-portal'
+      fullPath: '/employee-portal'
+      preLoaderRoute: typeof AuthenticatedEmployeePortalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/employees': {
@@ -490,6 +561,13 @@ declare module '@tanstack/react-router' {
       path: '/statistics'
       fullPath: '/statistics'
       preLoaderRoute: typeof AuthenticatedStatisticsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/team-calendar': {
+      id: '/_authenticated/team-calendar'
+      path: '/team-calendar'
+      fullPath: '/team-calendar'
+      preLoaderRoute: typeof AuthenticatedTeamCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/training': {
@@ -580,11 +658,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAlertsRoute: typeof AuthenticatedAlertsRoute
   AuthenticatedAttendanceRoute: typeof AuthenticatedAttendanceRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedBenefitsRoute: typeof AuthenticatedBenefitsRoute
+  AuthenticatedComplianceRoute: typeof AuthenticatedComplianceRoute
   AuthenticatedContractsRoute: typeof AuthenticatedContractsRoute
   AuthenticatedDepartmentsRoute: typeof AuthenticatedDepartmentsRoute
+  AuthenticatedEmployeePortalRoute: typeof AuthenticatedEmployeePortalRoute
   AuthenticatedEmployeesRoute: typeof AuthenticatedEmployeesRoute
   AuthenticatedOrgChartRoute: typeof AuthenticatedOrgChartRoute
   AuthenticatedPerformanceRoute: typeof AuthenticatedPerformanceRoute
@@ -592,6 +673,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchedulesRoute: typeof AuthenticatedSchedulesRoute
   AuthenticatedSelfServiceRoute: typeof AuthenticatedSelfServiceRoute
   AuthenticatedStatisticsRoute: typeof AuthenticatedStatisticsRoute
+  AuthenticatedTeamCalendarRoute: typeof AuthenticatedTeamCalendarRoute
   AuthenticatedTrainingRoute: typeof AuthenticatedTrainingRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
@@ -608,11 +690,14 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAlertsRoute: AuthenticatedAlertsRoute,
   AuthenticatedAttendanceRoute: AuthenticatedAttendanceRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedBenefitsRoute: AuthenticatedBenefitsRoute,
+  AuthenticatedComplianceRoute: AuthenticatedComplianceRoute,
   AuthenticatedContractsRoute: AuthenticatedContractsRoute,
   AuthenticatedDepartmentsRoute: AuthenticatedDepartmentsRoute,
+  AuthenticatedEmployeePortalRoute: AuthenticatedEmployeePortalRoute,
   AuthenticatedEmployeesRoute: AuthenticatedEmployeesRoute,
   AuthenticatedOrgChartRoute: AuthenticatedOrgChartRoute,
   AuthenticatedPerformanceRoute: AuthenticatedPerformanceRoute,
@@ -620,6 +705,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSchedulesRoute: AuthenticatedSchedulesRoute,
   AuthenticatedSelfServiceRoute: AuthenticatedSelfServiceRoute,
   AuthenticatedStatisticsRoute: AuthenticatedStatisticsRoute,
+  AuthenticatedTeamCalendarRoute: AuthenticatedTeamCalendarRoute,
   AuthenticatedTrainingRoute: AuthenticatedTrainingRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
